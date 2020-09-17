@@ -102,6 +102,9 @@ Scene_Battle.prototype.onZoneOk = function(skillId){
 	}
 	this._hitZoneWindow.hide();
 	delete this._hitZoneWindow;
+	BattleManager._playerTurn = false;
+	BattleManager._phase = 'turn'
+	BattleManager._isAction = true;
 	this.selectNextCommand();
 }
 
@@ -117,6 +120,9 @@ Scene_Battle.prototype.onEnemyOk = function() {
 		this._hitZoneWindow.show();
 		this._hitZoneWindow.select(0);
 	} else{
+		BattleManager._playerTurn = false;
+		BattleManager._phase = 'turn'
+		BattleManager._isAction = true;
 		this.selectNextCommand();
 	}
 };
@@ -153,20 +159,20 @@ BattleManager.setup = function(troopId, canEscape, canLose) {
     this.makeEscapeRatio();
 	this._actionEnemies = [];
 	this._playerTurn = false;
+	this._isAction = false;
 };
 BattleManager.startTurn = function() {
 	if (this._subject != null && this._subject.isEnemy()){
 		this._actionEnemies.push(this._subject);
 	}
-	this._subject = $gameParty.members()[0];
+	this._subject = $gameParty.members()[this._activeActor];
     this._phase = 'turn';
-    this.clearActor();
-    $gameTroop.increaseTurn();
+    //this.clearActor();
+    //$gameTroop.increaseTurn();
     this.makeActionOrders();
     $gameParty.requestMotionRefresh();
     this._logWindow.startTurn();
 	this._playerTurn = false;
-	//this._battlersTurns[0][2] = false;
 
 };
 Game_Battler.prototype.makeActions = function() {
@@ -191,6 +197,23 @@ Game_Enemy.prototype.makeActions = function() {
     }}
 }
 
+BattleManager.selectNextCommand = function() {
+    do {
+        if (!this.actor() || !this.actor().selectNextCommand()) {
+			if (this._actorIndex < 0){
+				this.changeActor(this._activeActor, 'waiting');
+			} else {
+				this.subject = $gameParty.members()[this._actorIndex]
+				this.changeActor(this._actorIndex + this._actorsLength, 'waiting');
+			}
+            if (this._actorIndex >= $gameParty.size()) {
+                this.startTurn();
+                break;
+            }
+        }
+    } while (!this.actor().canInput());
+};
+
 Game_Enemy_setup = Game_Enemy.prototype.setup
 Game_Enemy.prototype.setup = function(enemyId, x, y) {
     Game_Enemy_setup.apply(this, arguments)
@@ -208,6 +231,7 @@ Game_Enemy_performCollapse = Game_Enemy.prototype.performCollapse
 Game_Enemy.prototype.performCollapse = function() {
 	spriteset = BattleManager._spriteset
 	spriteset.deleteInfo(this._atbEnemyId, spriteset._atbEnemies, 0)
+	console.log("enemyId:" + this._atbEnemyId)
 	/*spriteset.deleteInfo(this._atbEnemyId, spriteset._hudEnemies, 1)
 	spriteset.deleteInfo(this._atbEnemyId, spriteset._hudEnemiesNames, 1)*/
     Game_Enemy_performCollapse.apply(this)
@@ -237,9 +261,9 @@ BattleManager.processEscape = function() {
 		//this._phase = "escape";
         this.displayEscapeFailureMessage();
         this._escapeRatio += 0.1;
-        $gameParty.clearActions();
-		console.log(this._phase);
-        //this.startTurn();
+		$gameParty.clearActions();
+		this._battlersTurns[this._activeActor][1] = ATB.Param.Base;
+		this._battlersTurns[this._activeActor][2] = false;
     }
     return success;
 };
@@ -251,7 +275,7 @@ BattleManager.updateEscape = function(){
 }
 
 BattleManager.makeActionOrders = function() {
-    this._actionBattlers = [$gameParty.members()[0]];
+    this._actionBattlers = $gameParty.members(); //this._actionBattlers = [$gameParty.members()[0]]
 };
 
 BattleManager_startBattle = BattleManager.startBattle;
@@ -264,8 +288,10 @@ BattleManager.startBattle = function() {
 	for (i = 0; i < battlers.length; i++){
 		this._battlersTurns.push([battlers[i], ATB.Param.Base, false]);
 	}
+	this._actorsLength = $gameParty.members().length
 	$gameTroop.makeActions();
 	$gameTroop.increaseTurn();
+	this._activeActor = null;
 };
 
 BattleManager_update = BattleManager.update;
@@ -293,30 +319,53 @@ BattleManager.update = function() {
 		}
     }
 	for (i = 0; i < this._battlersTurns.length; i++){
-		if (!(this._playerTurn && i == 0) && this._phase != 'action' && this._phase != "hitzone" && this._phase != "battleEnd" && this._phase != "start" && this._phase != "escape"){
+		if (!(this._playerTurn && i < this._actorsLength) && this._phase == 'turn' && !this._isAction){ //!= 'action' && this._phase != "hitzone" && 
+		//this._phase != "battleEnd" && this._phase != "start" && this._phase != "escape"){
 			this._battlersTurns[i][1] = this._battlersTurns[i][1] - this._battlersTurns[i][0].agi / ATB.Param.Divider;
 			if (this._battlersTurns[i][1] <= 0){
+				this._battlersTurns[i][2] = true;
 				this._battlersTurns[i][1] = ATB.Param.Base;
-				if (i == 0){
+				if (i < this._actorsLength){
 					this._playerTurn = true;
-					this._subject = $gameParty.members()[0]
-				} 
-				if (i != 0) {
-					if (!this._battlersTurns[i][0].isDead()){
+					this._subject = $gameParty.members()[i]
+					this._activeActor = i;
+					this._isAction = true;
+				} else {
+					this._subject = $gameTroop.members()[i - this._actorsLength]
+					/*if (!this._battlersTurns[i][0].isDead() && !this._battlersTurns[i][2]){
+						
 						this._actionEnemies.push(this._battlersTurns[i][0]);
-					}
+						
+					}*/
 				}
 				this._battlersTurns[i][2] = true;
 			}
 		}
 	}
-	if (this._phase != "action" && !this._playerTurn && this._phase != "hitzone" && (!this._subject || this._subject == null) && this._actionEnemies.length > 0){
-		//console.log("OK")
+	if (this._phase == 'turn' && //(this._phase != "action" && !this._playerTurn && this._phase != "hitzone" && 
+	(!this._subject || this._subject == null) && this._actionEnemies.length > 0){
 		this._subject = this._actionEnemies[0];
-		this._battlersTurns[this._subject.index() + 1][2] = true;
+		//console.log(this._subject)
 		this._actionEnemies.splice(0, 1);
-		$gameTroop.increaseTurn();
+		this._subject._states.forEach(function(state){
+			//console.log("state" + state + ": " + this._subject._stateTurns[state]);
+			this._subject._stateTurns[state]--;
+			this._logWindow.displayCurrentState(this._subject);
+			if (this._subject._stateTurns[state] <= 0){
+				this._subject.removeState(state);
+				this._logWindow.displayRemovedStates(this._subject);
+			}
+		}, this)
+		this._battlersTurns[this._subject.index() + this._actorsLength][2] = true;
+		//$gameTroop.increaseTurn();
+		//console.log($gameTroop.turn)
 	}
+};
+
+Game_Battler.prototype.onTurnEnd = function() {
+    this.clearResult();
+    this.regenerateAll();
+    this.removeStatesAuto(2);
 };
 
 BattleManager.startB = function() {
@@ -325,21 +374,26 @@ BattleManager.startB = function() {
 };
 
 BattleManager.processTurn = function() {
-    var subject = this._subject;
-	/*if (subject){
-		console.log("subject")
-	}*/
-	if (subject.isEnemy() && this._battlersTurns[subject.index() + 1][2] || subject.isActor() && this._battlersTurns[subject.index()][2]){
+	var subject = this._subject;
+	if (subject.isEnemy() && this._battlersTurns[subject.index() + this._actorsLength][2] || 
+	subject.isActor() && this._battlersTurns[subject.index()][2]){
+		//console.log('isEnemy: ' + subject.isEnemy().toString())
+
 		var action = subject.currentAction();
 		if (action) {
-			//console.log("action")
 			action.prepare();
 			if (action.isValid()) {
 				this.startAction();
 			}
 			subject.removeCurrentAction();
-			this._battlersTurns[subject.index() + 1][2] = false;
+			if (subject.isEnemy()){
+				this._battlersTurns[subject.index() + this._actorsLength][2] = false;
+			} /*selse {
+				this._battlersTurns[subject.index()][2] = false;
+			}*/
+			
 			$gameTroop.makeActions();
+		this.subject = null
 		} else {
 			subject.onAllActionsEnd();
 			this.refreshStatus();
@@ -351,6 +405,12 @@ BattleManager.processTurn = function() {
 		}
 	}
 
+};
+
+BattleManager.endAction = function() {
+	this._logWindow.endAction(this._subject);
+	this._isAction = false;
+    this._phase = 'turn';
 };
 
 BattleManager_startAction = BattleManager.startAction;
@@ -400,12 +460,20 @@ Scene_Battle.prototype.changeInputWindow = function() {
 Spriteset_Battle_createLowerLayer = Spriteset_Battle.prototype.createLowerLayer;
 Spriteset_Battle.prototype.createLowerLayer = function() {
     Spriteset_Battle_createLowerLayer.call(this);
-	
+	this._hpBases = [];
+	this._hpGauges = [];
+	this._mpGauges = [];
+	this._tpGauges = [];
+	this._hudFaces = [];
 	this.createHUDEnemies();
-	this.createHPBar();
-	this.createMPBar();
-	this.createTPBar();
-	this.createHUDFace();
+	var x = eval(ATB.Parameters['hud_x']);
+	var y = eval(ATB.Parameters['hud_y']);
+	//for (i in $gameParty.members()){
+		this.createHPBar(x, y, 0); //this.createHPBar(x + (Graphics.boxWidth - x) / 4 * i, y, i);
+		this.createMPBar(0);
+		this.createTPBar(0);
+		this.createHUDFace(0);
+	//}
 	this.createATBBar();
 	this.createATBActor();
 	this.createATBEnemies();
@@ -418,15 +486,18 @@ Spriteset_Battle.prototype.createATBBar = function(){
 }
 
 Spriteset_Battle.prototype.createATBActor = function(){
-	id = $gameParty._actors[0]
-	const fs = require('fs');
-	if (fs.existsSync("img/system/Actor" + id + ".png")){
-		filename = "Actor" + id;
-	} else{		
-		filename = "ActorN"
+	this._atbActors = [];
+	for (i in $gameParty.battleMembers()){
+		id = $gameParty._actors[i]
+		const fs = require('fs');
+		if (fs.existsSync("img/system/Actor_" + id + ".png")){
+			filename = "Actor_" + id;
+		} else{		
+			filename = "Actor_N"
+		}
+		this._atbActors.push(new Sprite_ATBActor(filename, this._atbBase, i));
+		this._battleField.addChild(this._atbActors[i]);
 	}
-	this._atbActor = new Sprite_ATBActor(filename, this._atbBase);
-	this._battleField.addChild(this._atbActor);
 }
 
 Spriteset_Battle.prototype.createATBEnemies = function(){
@@ -434,14 +505,16 @@ Spriteset_Battle.prototype.createATBEnemies = function(){
 		for (i = 0; i < $gameTroop._enemies.length; i++){
 			id = $gameTroop._enemies[i]._enemyId;
 			const fs = require('fs');
-			if (fs.existsSync("img/system/Enemy" + id + ".png")){
-				filename = "Enemy" + id;
+			if (fs.existsSync("img/system/Enemy_" + id + ".png")){
+				filename = "Enemy_" + id;
 			} else{
-				filename = "EnemyN"
+				filename = "Enemy_N"
 			}
-			this._atbEnemies.push(new Sprite_ATBEnemy(filename, this._atbBase, i + 1));
+			this._atbEnemies.push(new Sprite_ATBEnemy(filename, this._atbBase, i));
 			this._battleField.addChild(this._atbEnemies[i]);
-			$gameTroop._enemies[i].setAtbEnemy(i+1)
+			//console.log(id)
+			$gameTroop._enemies[i].setAtbEnemy(i)
+			//console.log("atbEnemy: " + (i))
 		}
 }
 
@@ -507,20 +580,21 @@ function Sprite_ATBActor(){
 Sprite_ATBActor.prototype = Object.create(Sprite_Base.prototype);
 Sprite_ATBActor.prototype.constructor = Sprite_ATBActor;
 
-Sprite_ATBActor.prototype.initialize = function(picture, atbBase){
+Sprite_ATBActor.prototype.initialize = function(picture, atbBase, id){
 	Sprite_Base.prototype.initialize.call(this);
 	this.bitmap = ImageManager.loadSystem(picture);
 	this._atbBase = atbBase;
+	this._id = id
 }
 
 Sprite_ATBActor.prototype.update = function(){
 	Sprite_Base.prototype.update.call(this);
 	if (this._atbBase != undefined && BattleManager._battlersTurns != undefined){
 		this.x = this._atbBase.x;
-		if (BattleManager._playerTurn){
+		if (BattleManager._battlersTurns[this._id][1] == ATB.Param.Base){
 			this.y = 0
 		} else {
-			this.y = this._atbBase.height / ATB.Param.Base * (BattleManager._battlersTurns[0][1])
+			this.y = this._atbBase.height / ATB.Param.Base * (BattleManager._battlersTurns[this._id][1])
 		}
 	}
 }
@@ -542,7 +616,7 @@ Sprite_ATBEnemy.prototype.update = function(){
 	if (this._atbBase != undefined && BattleManager._battlersTurns != undefined 
 	&& BattleManager._battlersTurns.length == $gameParty.members().length + $gameTroop.members().length){
 		this.x = this._atbBase.x;
-		this.y = this._atbBase.height / ATB.Param.Base * (BattleManager._battlersTurns[this._id][1])
+		this.y = this._atbBase.height / ATB.Param.Base * (BattleManager._battlersTurns[this._id + BattleManager._actorsLength][1])
 	}
 }
 
@@ -559,6 +633,7 @@ Sprite_ATBMagic.prototype.initialize = function(enemyBase){
 	this._physBitmap = ImageManager.loadSystem("WIP_Phys_Skill_Detector");
 	this.bitmap = this._magicBitmap
 	this._enemyBase = enemyBase;
+	this._id = enemyBase._id
 	this.opacity = 0;
 }
 
@@ -566,8 +641,10 @@ Sprite_ATBMagic.prototype.update = function(){
 	Sprite_Base.prototype.update.call(this);
 	this.y = this._enemyBase.y + (this._enemyBase.height - this.height)/2;
 	this.x = this._enemyBase.x - this.width;
-	if (BattleManager._battlersTurns != undefined && BattleManager._battlersTurns[1][0]._actions[0] != undefined) {
-		skill = BattleManager._battlersTurns[1][0]._actions[0]._item
+	if (BattleManager._battlersTurns != undefined && 
+		BattleManager._battlersTurns[this._id + $gameParty.members().length][0]._actions[0] != undefined) {
+
+		skill = BattleManager._battlersTurns[this._id + $gameParty.members().length][0]._actions[0]._item
 		if (skill._dataClass == "skill" && skill._itemId != 1) {
 			if ($dataSkills[skill._itemId].hitType != 0){
 				if ($dataSkills[skill._itemId].hitType == 1){
@@ -589,27 +666,27 @@ Sprite_ATBMagic.prototype.update = function(){
 ///HUD
 
 
-Spriteset_Battle.prototype.createHPBar = function(){
-    this._hpBase = new Sprite_HPBarBase("WIP_HP_Actor_Bar");
-	this._hpBase.setup();
-    this._battleField.addChild(this._hpBase);
-	this._hpGauge = new Sprite_HPBar("WIP_HP_Actor_Bar_Anim", this._hpBase);
-    this._battleField.addChild(this._hpGauge);
+Spriteset_Battle.prototype.createHPBar = function(x, y, id){
+    this._hpBases.push(new Sprite_HPBarBase("WIP_HP_Actor_Bar", x, y, id));
+	//this._hpBase.setup();
+    this._battleField.addChild(this._hpBases[id]);
+	this._hpGauges.push(new Sprite_HPBar("WIP_HP_Actor_Bar_Anim", this._hpBases[id]));
+    this._battleField.addChild(this._hpGauges[id]);
 }
 
-Spriteset_Battle.prototype.createMPBar = function(){
-	this._mpGauge = new Sprite_MPBar("WIP_MP_Actor_Bar_Anim", this._hpBase);
-    this._battleField.addChild(this._mpGauge);
+Spriteset_Battle.prototype.createMPBar = function(id){
+	this._mpGauges.push(new Sprite_MPBar("WIP_MP_Actor_Bar_Anim", this._hpBases[id]));
+    this._battleField.addChild(this._mpGauges[id]);
 }
 
-Spriteset_Battle.prototype.createTPBar = function(){
-	this._tpGauge = new Sprite_TPBar("WIP_TP_Actor_Bar_Anim", this._hpBase);
-    this._battleField.addChild(this._tpGauge);
+Spriteset_Battle.prototype.createTPBar = function(id){
+	this._tpGauges.push(new Sprite_TPBar("WIP_TP_Actor_Bar_Anim", this._hpBases[id]));
+    this._battleField.addChild(this._tpGauges[id]);
 }
 
-Spriteset_Battle.prototype.createHUDFace = function(){
-	this._hudFace = new Sprite_HUDFace($gameParty.members()[0]._faceName, this._hpBase);
-	this._battleField.addChild(this._hudFace);
+Spriteset_Battle.prototype.createHUDFace = function(id){
+	this._hudFaces.push(new Sprite_HUDFace($gameParty.members()[id]._faceName, this._hpBases[id]));
+	this._battleField.addChild(this._hudFaces[id]);
 }
 
 function Sprite_HPBarBase(){
@@ -619,15 +696,12 @@ function Sprite_HPBarBase(){
 Sprite_HPBarBase.prototype = Object.create(Sprite_Base.prototype);
 Sprite_HPBarBase.prototype.constructor = Sprite_HPBarBase;
 
-Sprite_HPBarBase.prototype.initialize = function(picture){
+Sprite_HPBarBase.prototype.initialize = function(picture, x, y, id){
 	Sprite_Base.prototype.initialize.call(this);
 	this.bitmap = ImageManager.loadSystem(picture);
-}
-
-Sprite_HPBarBase.prototype.setup = function(){
-	this.x = eval(ATB.Parameters['hud_x']);
-	this.y = eval(ATB.Parameters['hud_y']);
-
+	this.x = x;
+	this.y = y;
+	this._id = id;
 }
 
 function Sprite_HPBar(){
@@ -643,13 +717,14 @@ Sprite_HPBar.prototype.initialize = function(picture, base){
 	this.bitmap = ImageManager.loadSystem(picture);
 	this.x = this.base.x;
 	this.y = this.base.y;
-
+	this._id = this.base._id
 }
 Sprite_HPBar.prototype.update = function(){
 	Sprite_Base.prototype.update.call(this);
 	this._leftPad = 83
 	this._rightPad = 6
-	var pw = Math.floor(this._leftPad + (this._bitmap.width - this._leftPad - this._rightPad) * $gameParty.members()[0].hpRate())
+	var pw = Math.floor(this._leftPad + (this._bitmap.width - this._leftPad - this._rightPad) * 
+	$gameParty.members()[this._id].hpRate())
 	this.setFrame(0, 0, pw, this._bitmap.height)
 }
 
@@ -666,12 +741,14 @@ Sprite_MPBar.prototype.initialize = function(picture, base){
 	this.bitmap = ImageManager.loadSystem(picture);
 	this.x = 0 + this.base.x;
 	this.y = 73 + this.base.y;
+	this._id = this.base._id
 }
 Sprite_MPBar.prototype.update = function(){
 	Sprite_Base.prototype.update.call(this);
 	this._leftPad = 40
 	this._rightPad = 21
-	var pw = Math.floor(this._leftPad + (this._bitmap.width - this._leftPad - this._rightPad) * $gameParty.members()[0].mpRate())
+	var pw = Math.floor(this._leftPad + (this._bitmap.width - this._leftPad - this._rightPad) * 
+	$gameParty.members()[this._id].mpRate())
 	this.setFrame(0, 0, pw, this._bitmap.height)
 }
 
@@ -688,13 +765,14 @@ Sprite_TPBar.prototype.initialize = function(picture, base){
 	this.bitmap = ImageManager.loadSystem(picture);
 	this.x = this.base.x;
 	this.y = this.base.y;
-
+	this._id = this.base._id
 }
 Sprite_TPBar.prototype.update = function(){
 	Sprite_Base.prototype.update.call(this);
 	this._leftPad = 10
 	this._rightPad = 47
-	var pw = Math.floor(this._leftPad + (this._bitmap.width - this._leftPad - this._rightPad) * $gameParty.members()[0].tpRate())
+	var pw = Math.floor(this._leftPad + (this._bitmap.width - this._leftPad - this._rightPad) * 
+	$gameParty.members()[this._id].tpRate())
 	this.setFrame(0, 0, pw, this._bitmap.height)
 
 }
@@ -857,11 +935,11 @@ Sprite_HUDEnemyName.prototype.constructor = Sprite_HUDEnemyName;
 Sprite_HUDEnemyName.prototype.initialize = function(id){
 	Sprite.prototype.initialize.call(this, new Bitmap(Graphics.width, Graphics.height));
 	this._id = id;
-	name = $gameTroop._enemies[this._id].enemy().name
+	this._name = $gameTroop._enemies[$gameTroop._enemies.length - 1 - this._id].enemy().name
 	if ($gameTroop._enemies[this._id]._plural){
-		name += $gameTroop._enemies[this._id]._letter
+		this._name += $gameTroop._enemies[this._id]._letter
 	}
-	this.bitmap.drawText(name, this.x, this.y, Graphics.boxWidth / 8, 30, 'center');
+	this.bitmap.drawText(this._name, this.x, this.y, Graphics.boxWidth / 8, 30, 'center');
 }
 
 Sprite_HUDEnemyName.prototype.update = function(){
@@ -1007,11 +1085,6 @@ Scene_Battle.prototype.stop = function() {
     this._partyCommandWindow.close();
     this._actorCommandWindow.close();
 };
-
-Game_Party.prototype.maxBattleMembers = function() {
-    return 1;
-};
-
 
 
 Scene_Battle.prototype.createActorCommandWindow = function() {
