@@ -641,10 +641,9 @@ Sprite_ATBMagic.prototype.update = function(){
 	Sprite_Base.prototype.update.call(this);
 	this.y = this._enemyBase.y + (this._enemyBase.height - this.height)/2;
 	this.x = this._enemyBase.x - this.width;
-	if (BattleManager._battlersTurns != undefined && 
-		BattleManager._battlersTurns[this._id + $gameParty.members().length][0]._actions[0] != undefined) {
+	if (BattleManager._battlersTurns != undefined && BattleManager._battlersTurns[$gameParty.members().length][0]._actions[0] != undefined) {
 
-		skill = BattleManager._battlersTurns[this._id + $gameParty.members().length][0]._actions[0]._item
+		skill = BattleManager._battlersTurns[this._id + $gameParty.members().length][0]._actions[0]._itemId;
 		if (skill._dataClass == "skill" && skill._itemId != 1) {
 			if ($dataSkills[skill._itemId].hitType != 0){
 				if ($dataSkills[skill._itemId].hitType == 1){
