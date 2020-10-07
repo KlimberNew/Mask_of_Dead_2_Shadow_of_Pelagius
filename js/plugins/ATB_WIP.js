@@ -345,10 +345,10 @@ BattleManager.update = function() {
 	if (this._phase == 'turn' && //(this._phase != "action" && !this._playerTurn && this._phase != "hitzone" && 
 	(!this._subject || this._subject == null) && this._actionEnemies.length > 0){
 		this._subject = this._actionEnemies[0];
-		//console.log(this._subject)
+		console.log(this._subject)
 		this._actionEnemies.splice(0, 1);
 		this._subject._states.forEach(function(state){
-			//console.log("state" + state + ": " + this._subject._stateTurns[state]);
+			console.log("state" + state + ": " + this._subject._stateTurns[state]);
 			this._subject._stateTurns[state]--;
 			this._logWindow.displayCurrentState(this._subject);
 			if (this._subject._stateTurns[state] <= 0){
@@ -365,7 +365,7 @@ BattleManager.update = function() {
 Game_Battler.prototype.onTurnEnd = function() {
     this.clearResult();
     this.regenerateAll();
-    this.removeStatesAuto(2);
+	this.removeStatesAuto(2);
 };
 
 BattleManager.startB = function() {
@@ -377,7 +377,7 @@ BattleManager.processTurn = function() {
 	var subject = this._subject;
 	if (subject.isEnemy() && this._battlersTurns[subject.index() + this._actorsLength][2] || 
 	subject.isActor() && this._battlersTurns[subject.index()][2]){
-		//console.log('isEnemy: ' + subject.isEnemy().toString())
+		console.log('isEnemy: ' + subject.isEnemy().toString())
 
 		var action = subject.currentAction();
 		if (action) {
@@ -512,9 +512,9 @@ Spriteset_Battle.prototype.createATBEnemies = function(){
 			}
 			this._atbEnemies.push(new Sprite_ATBEnemy(filename, this._atbBase, i));
 			this._battleField.addChild(this._atbEnemies[i]);
-			//console.log(id)
+			console.log(id)
 			$gameTroop._enemies[i].setAtbEnemy(i)
-			//console.log("atbEnemy: " + (i))
+			console.log("atbEnemy: " + (i))
 		}
 }
 
@@ -641,9 +641,11 @@ Sprite_ATBMagic.prototype.update = function(){
 	Sprite_Base.prototype.update.call(this);
 	this.y = this._enemyBase.y + (this._enemyBase.height - this.height)/2;
 	this.x = this._enemyBase.x - this.width;
-	if (BattleManager._battlersTurns != undefined && BattleManager._battlersTurns[$gameParty.members().length][0]._actions[0] != undefined) {
+	if (BattleManager._battlersTurns != undefined
+		&& BattleManager._battlersTurns[this._id + $gameParty.members().length] != undefined &&
+		BattleManager._battlersTurns[this._id + $gameParty.members().length][0]._actions[0] != undefined) {
 
-		skill = BattleManager._battlersTurns[this._id + $gameParty.members().length][0]._actions[0]._itemId;
+		skill = BattleManager._battlersTurns[this._id + $gameParty.members().length][0]._actions[0]._item
 		if (skill._dataClass == "skill" && skill._itemId != 1) {
 			if ($dataSkills[skill._itemId].hitType != 0){
 				if ($dataSkills[skill._itemId].hitType == 1){
@@ -1114,8 +1116,10 @@ BattleManager.updateTurn = function() {
         this.processTurn();
     } //else 
 	if (this._playerTurn) {
-        this.endTurn();
-		this.startInput();
+		this.endTurn();
+		if (!BattleManager.checkBattleEnd){
+			this.startInput();
+		}
     }
 };
 
