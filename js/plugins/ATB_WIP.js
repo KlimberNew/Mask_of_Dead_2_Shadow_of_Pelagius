@@ -324,6 +324,7 @@ BattleManager.startBattle = function() {
 	$gameTroop.increaseTurn();
 	this.refreshStatus();
 	this._activeActor = null;
+	this._isEnemySubject = false;
 };
 
 BattleManager_update = BattleManager.update;
@@ -362,15 +363,23 @@ BattleManager.update = function() {
 					this._activeActor = i;
 					this._isAction = true;
 				} else {
-					this._subject = $gameTroop.members()[i - this._actorsLength]
+					if ($gameTroop.members()[i - this._actorsLength].isAlive()){
+						if (!this._isEnemySubject){
+							this._subject = $gameTroop.members()[i - this._actorsLength];
+							this._isEnemySubject = true;
+						} else {
+							this._actionEnemies.push($gameTroop.members()[i - this._actorsLength]);
+						}
+					}
 				}
 				this._battlersTurns[i][2] = true;
 			}
 		}
 	}
 	if (this._phase == 'turn' && 
-	(!this._subject || this._subject == null) && this._actionEnemies.length > 0){
+	(!this._subject || this._subject == null || (this._subject.isEnemy() && !this._isEnemySubject)) && this._actionEnemies.length > 0){
 		this._subject = this._actionEnemies[0];
+		this._isEnemySubject = true;
 		this._actionEnemies.splice(0, 1);
 		this._subject._states.forEach(function(state){
 			this._subject._stateTurns[state]--;
@@ -423,6 +432,7 @@ BattleManager.processTurn = function() {
 			subject.removeCurrentAction();
 			if (subject.isEnemy()){
 				this._battlersTurns[subject.index() + this._actorsLength][2] = false;
+				this._isEnemySubject = false;
 			}
 			//$gameParty.makeActions();
 			$gameTroop.makeActions();
@@ -497,7 +507,9 @@ Scene_Battle.prototype.changeInputWindow = function() {
             this.startActorCommandSelection();
         } else {
 			if ($gameParty.members()[BattleManager._activeActor].canInput()){
-				this.startPartyCommandSelection();
+				BattleManager.changeActor(BattleManager._activeActor, 'undecided');
+				this.startActorCommandSelection();
+				//this.startPartyCommandSelection();
 			} else {
 				BattleManager.startTurn();
 			}
@@ -669,6 +681,7 @@ Sprite_ATBMagic.prototype.initialize = function(enemyBase){
 	Sprite_Base.prototype.initialize.call(this);
 	this._magicBitmap = ImageManager.loadSystem("WIP_Magic_Skill_Detector");
 	this._physBitmap = ImageManager.loadSystem("WIP_Phys_Skill_Detector");
+	this._netBitmap = ImageManager.loadSystem("WIP_Neitral_Skill_Detector");
 	this.bitmap = this._magicBitmap
 	this._enemyBase = enemyBase;
 	this._id = enemyBase._id
@@ -692,6 +705,8 @@ Sprite_ATBMagic.prototype.update = function(){
 					this.bitmap = this._magicBitmap;
 				}
 				this.opacity = 255;
+			} else{
+				this.bitmap = this._netBitmap;
 			}
 		}
 		else{
@@ -731,7 +746,7 @@ Spriteset_Battle.prototype.createTPBar = function(id){
 }
 
 Spriteset_Battle.prototype.createHUDFace = function(id){
-	this._hudFaces.push(new Sprite_HUDFace($gameParty.members()[id]._faceName, this._hpBases[id]));
+	this._hudFaces.push(new Sprite_HUDFace($gameParty.members()[id]._faceName, $gameParty.members()[id]._faceIndex, this._hpBases[id]));
 	this._battleField.addChild(this._hudFaces[id]);
 }
 
@@ -897,25 +912,20 @@ Sprite_HUDFace.prototype.initialize = function(){
 	Sprite_Base.prototype.initialize.call(this);
 }
 
-Sprite_HUDFace.prototype.initialize = function(picture, base){
+Sprite_HUDFace.prototype.initialize = function(picture, id, base){
 	Sprite_Base.prototype.initialize.call(this);
 	this.base = base;
+	this._id = id
 	this.bitmap = ImageManager.loadFace(picture);
 	this._maskSprite = new Sprite()
 	this.addChild(this._maskSprite);
-	
-	this.setFrame(0, 0 , this._bitmap.width, this._bitmap.height);
+	this.setFrame(id % 4 * 144, Math.floor(id / 4) * 144, 144, 144);
 	this.scale.x = 98 / 144;
 	this.scale.y = 96 / 144;
 	this.x += this.base.x;
 	this.y += this.base.y;
 	this._maskSprite.bitmap = ImageManager.loadSystem("Mask1")
 	this.mask = this._maskSprite;
-}
-
-Sprite_HUDFace.prototype.update = function(){
-	Sprite_Base.prototype.update.call(this);
-	this.setFrame(0, 0 , this._bitmap.width, this._bitmap.height);
 }
 
 function Sprite_HUDName(){
@@ -1237,10 +1247,13 @@ Scene_Battle.prototype.createActorCommandWindow = function() {
     this._actorCommandWindow.setHandler('skill',  this.commandSkill.bind(this));
     this._actorCommandWindow.setHandler('guard',  this.commandGuard.bind(this));
     this._actorCommandWindow.setHandler('item',   this.commandItem.bind(this));
-    this._actorCommandWindow.setHandler('cancel', this.selectPreviousCommand.bind(this));
+    this._actorCommandWindow.setHandler('cancel', this.startPartyCommandSelection.bind(this));
     this.addWindow(this._actorCommandWindow);
 };
 
+Scene_Battle.prototype.commandFight = function() {
+    this.startActorCommandSelection();
+};
 
 BattleManager.selectPreviousCommand = function() {
 	do {
@@ -1282,7 +1295,6 @@ BattleManager.getNextSubject = function() {
 	
 	this._battlersTurns.forEach(function(i){
 		if (i[2]){
-			console.log("getNextSubject")
 			return i[0]
 		}
 	})
