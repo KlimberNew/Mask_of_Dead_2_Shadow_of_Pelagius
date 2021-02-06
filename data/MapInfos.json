@@ -33,7 +33,7 @@ null,
 {"id":31,"expanded":true,"name":"14 Чистилище(Запад)","order":63,"parentId":0,"scrollX":1769.4545454545455,"scrollY":1237.0909090909092},
 {"id":32,"expanded":false,"name":"Чистилище(Центр)","order":64,"parentId":0,"scrollX":1621.5,"scrollY":922.5},
 {"id":33,"expanded":false,"name":"Чистилище(Юго-Запад)","order":66,"parentId":0,"scrollX":1786.6666666666667,"scrollY":1005.3333333333334},
-{"id":34,"expanded":false,"name":"Тестовая зона","order":67,"parentId":0,"scrollX":893.4545454545455,"scrollY":502.90909090909093},
+{"id":34,"expanded":false,"name":"Тестовая зона","order":67,"parentId":0,"scrollX":509,"scrollY":425.5},
 {"id":35,"expanded":false,"name":"15 Серебренная пустыня\\каньон","order":70,"parentId":0,"scrollX":811,"scrollY":615},
 {"id":36,"expanded":true,"name":"16-18 Зубчатый каньон","order":71,"parentId":35,"scrollX":982.8,"scrollY":553.1999999999999},
 {"id":37,"expanded":false,"name":"17 Отдельная местность","order":72,"parentId":36,"scrollX":982.8,"scrollY":553.1999999999999},
@@ -74,5 +74,5 @@ null,
 {"id":72,"expanded":false,"name":"46 Кабинет Сидрина Рури","order":65,"parentId":32,"scrollX":1092,"scrollY":614.6666666666666},
 {"id":73,"expanded":true,"name":"--------Глава 3-------------------------------------","order":73,"parentId":0,"scrollX":1092,"scrollY":614.6666666666666},
 {"id":74,"expanded":false,"name":"47 Серебреная пустыня(бойня)","order":74,"parentId":73,"scrollX":1081.3333333333333,"scrollY":614.6666666666666},
-{"id":75,"expanded":false,"name":"48 Зубчатый каньон(беседа-бой)","order":75,"parentId":73,"scrollX":929.1428571428571,"scrollY":523.7142857142857}
+{"id":75,"expanded":false,"name":"48 Зубчатый каньон(беседа-бой)","order":75,"parentId":73,"scrollX":461.5,"scrollY":433.5}
 ]
