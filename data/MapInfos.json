@@ -75,5 +75,5 @@ null,
 {"id":73,"expanded":true,"name":"--------Глава 3-------------------------------------","order":74,"parentId":0,"scrollX":1092,"scrollY":614.6666666666666},
 {"id":74,"expanded":false,"name":"47 Серебреная пустыня(бойня)","order":75,"parentId":73,"scrollX":1081.3333333333333,"scrollY":614.6666666666666},
 {"id":75,"expanded":false,"name":"48 Зубчатый каньон(беседа-бой)","order":76,"parentId":73,"scrollX":461.5,"scrollY":433.5},
-{"id":76,"expanded":false,"name":"+ Арена","order":62,"parentId":29,"scrollX":832,"scrollY":640}
+{"id":76,"expanded":false,"name":"+ Арена","order":62,"parentId":29,"scrollX":811,"scrollY":499}
 ]
