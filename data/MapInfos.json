@@ -69,11 +69,11 @@ null,
 {"id":67,"expanded":true,"name":"42 Последний фрагмент","order":46,"parentId":59,"scrollX":819,"scrollY":461},
 {"id":68,"expanded":false,"name":"43 Бегство_1","order":47,"parentId":67,"scrollX":811,"scrollY":499},
 {"id":69,"expanded":true,"name":"44 Убить страх_1","order":48,"parentId":67,"scrollX":1092,"scrollY":614.6666666666666},
-{"id":70,"expanded":true,"name":"Склад со снаряжением","order":60,"parentId":28,"scrollX":2149.090909090909,"scrollY":1874.1818181818182},
+{"id":70,"expanded":true,"name":"Склад со снаряжением","order":60,"parentId":28,"scrollX":591,"scrollY":515.4},
 {"id":71,"expanded":true,"name":"45 Иллюзорный мир","order":49,"parentId":69,"scrollX":1092,"scrollY":614.6666666666666},
 {"id":72,"expanded":false,"name":"46 Кабинет Сидрина Рури","order":66,"parentId":32,"scrollX":982.8,"scrollY":553.1999999999999},
 {"id":73,"expanded":true,"name":"--------Глава 3-------------------------------------","order":74,"parentId":0,"scrollX":1638,"scrollY":922},
 {"id":74,"expanded":false,"name":"48 Серебреная пустыня(бойня)","order":75,"parentId":73,"scrollX":973.1999999999999,"scrollY":553.1999999999999},
-{"id":75,"expanded":false,"name":"47 Зубчатый каньон(беседа-бой)","order":76,"parentId":73,"scrollX":982.8,"scrollY":553.1999999999999},
-{"id":76,"expanded":false,"name":"+ Арена","order":62,"parentId":29,"scrollX":982.8,"scrollY":553.1999999999999}
+{"id":75,"expanded":false,"name":"47 Зубчатый каньон(беседа-бой)","order":76,"parentId":73,"scrollX":591,"scrollY":515.4},
+{"id":76,"expanded":false,"name":"+ Арена","order":62,"parentId":29,"scrollX":591,"scrollY":515.4}
 ]
