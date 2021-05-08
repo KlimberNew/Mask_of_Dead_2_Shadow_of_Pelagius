@@ -1,12 +1,12 @@
 {
-    "name": "rmmz-game",
+    "name": "rmmv-game-data",
     "main": "index.html",
-    "chromium-args": "--force-color-profile=srgb",
+    "js-flags": "--expose-gc",
     "window": {
-        "title": "Mask of Dead 2: Shadow of Pelagius",
+        "title": "",
+        "toolbar": false,
         "width": 816,
         "height": 624,
-        "position": "center",
-        "icon": "icon/icon.png"
+        "icon": "www/icon/icon.png"
     }
 }
