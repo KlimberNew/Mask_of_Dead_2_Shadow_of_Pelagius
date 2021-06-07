@@ -42,7 +42,13 @@ Game_Map.prototype.setup = function(mapId) {
     Stealth_Game_Map_prototype_setup.call(this, mapId);
     events = this._events;
     events.forEach(function(i){
+        if (i.page() == undefined || i.page().list == undefined){
+            return;
+        }
         first = i.page().list[0]; 
+        if (first == undefined){
+            return;
+        }
         if (first.code == 356){
             params = first.parameters[0].split(" ");
             if (params[0] == "Stealth"){
