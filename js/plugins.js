@@ -27,5 +27,6 @@ var $plugins =
 {"name":"MOG_TreasurePopup","status":true,"description":"(v1.1) Apresenta o ícone e o nome do tesouro ganho.","parameters":{"Duration":"15","Fade Speed":"5","X - Axis":"0","Y - Axis":"-32","Random Movement":"false","X Speed":"0","Y Speed":"1","Font Size":"16","Icon Scale":"0.60","Treasure Space Y-Axis":"20","Zoom Effect":"false","Gold Popup":"true","Gold Icon Index":"330"}},
 {"name":"ScreenVariables","status":true,"description":"v1.04 Выводит заданный текст на экран.\r\n<ScreenVariables>","parameters":{"Variable Number":"100","Auto-Refresh":"false"}},
 {"name":"GALV_LayerGraphics","status":true,"description":"(v.2.0) Create graphic layers for parallax mapping, fog, etc. View the 'Help' document for plugin commands and info.","parameters":{"Tile Size":"48"}},
-{"name":"GALV_EventSpawner","status":true,"description":"(v.1.8) Spawn events from a specified spawn map to a desired location.","parameters":{"Spawn Map Id":"87"}}
+{"name":"GALV_EventSpawner","status":true,"description":"(v.1.8) Spawn events from a specified spawn map to a desired location.","parameters":{"Spawn Map Id":"87"}},
+{"name":"CheckEventTriggerTouchAllFollowers","status":true,"description":"","parameters":{}}
 ];
