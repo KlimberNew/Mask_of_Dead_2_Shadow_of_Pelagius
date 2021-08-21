@@ -1,7 +1,7 @@
 [
 null,
-{"id":1,"expanded":true,"name":"1 Вступительная кат-сцена","order":1,"parentId":0,"scrollX":605.3333333333334,"scrollY":564},
-{"id":2,"expanded":false,"name":"2 Каньон Начало","order":2,"parentId":1,"scrollX":650,"scrollY":567.3333333333334},
+{"id":1,"expanded":true,"name":"1 Вступительная кат-сцена","order":1,"parentId":0,"scrollX":655.2,"scrollY":368.8},
+{"id":2,"expanded":true,"name":"2 Каньон Начало","order":2,"parentId":1,"scrollX":650,"scrollY":567.3333333333334},
 {"id":3,"expanded":true,"name":"3 Каньон","order":3,"parentId":2,"scrollX":605.3333333333334,"scrollY":553.3333333333334},
 {"id":4,"expanded":false,"name":"4 Босс-файт","order":4,"parentId":3,"scrollX":1558.6666666666667,"scrollY":1237.3333333333333},
 {"id":5,"expanded":true,"name":"5 Рука опустошителя","order":5,"parentId":4,"scrollX":982.8,"scrollY":553.1999999999999},
@@ -85,7 +85,7 @@ null,
 {"id":83,"expanded":true,"name":"+ Кабинет Зеда","order":70,"parentId":80,"scrollX":605.3333333333334,"scrollY":564},
 {"id":84,"expanded":true,"name":"+ Вход в подземный корпус","order":71,"parentId":83,"scrollX":605.3333333333334,"scrollY":564},
 {"id":85,"expanded":true,"name":"+ Наблюдательный пост","order":72,"parentId":84,"scrollX":989.3333333333334,"scrollY":982.6666666666666},
-{"id":86,"expanded":true,"name":"+ Сектор А","order":73,"parentId":85,"scrollX":797.3333333333334,"scrollY":1222.6666666666667},
+{"id":86,"expanded":true,"name":"+ Сектор А","order":73,"parentId":85,"scrollX":730.4,"scrollY":1216},
 {"id":87,"expanded":false,"name":"ДляСпавнаСобытий","order":89,"parentId":0,"scrollX":819,"scrollY":461},
 {"id":88,"expanded":true,"name":"+ Сектор А(ТРЕВОГА)","order":74,"parentId":86,"scrollX":550,"scrollY":416.5},
 {"id":89,"expanded":true,"name":"+ Наблюдательный пост(ТРЕВОГА)","order":75,"parentId":88,"scrollX":811,"scrollY":461.5}
