@@ -596,6 +596,7 @@ ItemManager.effectIUSRandomChange1 = function(item, stat, value) {
     var offset = value;
     switch (stat) {
       case 'HP':
+      case 'HRG':
       case 'MAXHP':
       case 'MAX HP':
         item.params[0] += Math.floor(Math.random() * randomValue - offset);
@@ -657,6 +658,7 @@ ItemManager.effectIUSRandomChange2 = function(item, stat, value) {
     }
     switch (stat) {
       case 'HP':
+      case 'HRG':
       case 'MAXHP':
       case 'MAX HP':
         item.params[0] += Math.floor(Math.random() * randomValue);
@@ -717,6 +719,7 @@ ItemManager.effectIUSResetStat = function(item, stat) {
     var baseItem = DataManager.getBaseItem(item);
     switch (stat) {
       case 'HP':
+      case 'HRG':
       case 'MAXHP':
       case 'MAX HP':
         item.params[0] = baseItem.params[0];
@@ -819,6 +822,7 @@ ItemManager.effectIUSParamRateChange = function(item, stat, value) {
     var baseItem = DataManager.getBaseItem(item);
     switch (stat) {
       case 'HP':
+      case 'HRG':
       case 'MAXHP':
       case 'MAX HP':
         item.params[0] += value * 0.01 * baseItem.params[0];
@@ -875,6 +879,7 @@ ItemManager.effectIUSParamRateChange = function(item, stat, value) {
 ItemManager.effectIUSParamChange = function(item, stat, value) {
     switch (stat) {
       case 'HP':
+      case 'HRG':
       case 'MAXHP':
       case 'MAX HP':
         item.params[0] += value;
