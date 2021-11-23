@@ -31,5 +31,6 @@ var $plugins =
 {"name":"ScreenVariables","status":true,"description":"v1.04 Выводит заданный текст на экран.\r\n<ScreenVariables>","parameters":{"Variable Number":"100","Auto-Refresh":"false"}},
 {"name":"GALV_LayerGraphics","status":true,"description":"(v.2.0) Create graphic layers for parallax mapping, fog, etc. View the 'Help' document for plugin commands and info.","parameters":{"Tile Size":"48"}},
 {"name":"GALV_EventSpawner","status":true,"description":"(v.1.8) Spawn events from a specified spawn map to a desired location.","parameters":{"Spawn Map Id":"87"}},
-{"name":"CheckEventTriggerTouchAllFollowers","status":true,"description":"","parameters":{}}
+{"name":"CheckEventTriggerTouchAllFollowers","status":true,"description":"","parameters":{}},
+{"name":"BBS_VersionDisplay","status":true,"description":"v1.02 Adds display of the game version to the title screen.\r\nSpecial Thanks to Tsukihime for all the help.\r\nSpecial Thanks to 'Ramza' Michael Sweeney for all the support.\r\n\r\n============================================================================\r\nParameters\r\n============================================================================","parameters":{"Game Version Number":"1.0.0","Game Version Font":"","Version Font Size":"20","Show Version Number?":"true","Version Text Color":"white","Version Outline Color":"black","Version Outline Width":"8","Title Italic":"false","Version Text Max Width":"Graphics.width / 3\r"}}
 ];
