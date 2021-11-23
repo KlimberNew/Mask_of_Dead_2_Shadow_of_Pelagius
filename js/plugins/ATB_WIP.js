@@ -34,6 +34,13 @@
  * @type eval
  * @desc y of hud (default Graphics.height - (2 - Math.floor(id / 2)) * 125 - 20)
  * @default Graphics.height - (2 - Math.floor(id / 2)) * 125 - 20
+ * 
+ * @help
+ * Skill 3 - Head
+ * Skill 4 - Torso
+ * Skill 5 - Legs
+ * Skill 6 - Arms
+ * 
  */
  ATB = {}
  
@@ -185,13 +192,31 @@ BattleManager.startTurn = function() {
 	this._subject = $gameParty.members()[this._activeActor];
     this._phase = 'turn';
     //this.clearActor();
-    //$gameTroop.increaseTurn();
+	/*if (this._activeActor == 0){
+    	$gameTroop.increaseTurn();
+	}*/
     this.makeActionOrders();
     $gameParty.requestMotionRefresh();
     this._logWindow.startTurn();
 	this._playerTurn = false;
 
 };
+
+Game_Battler_initMembers = Game_Battler.prototype.initMembers;
+Game_Battler.prototype.initMembers = function() {
+    Game_Battler_initMembers.apply(this);
+	this._turnCount = 0;
+};
+
+Game_Enemy.prototype.meetsTurnCondition = function(param1, param2) {
+    var n = this._turnCount;
+    if (param2 === 0) {
+        return n === param1;
+    } else {
+        return n > 0 && n >= param1 && n % param2 === param1 % param2;
+    }
+};
+
 Game_Battler.prototype.makeActions = function() {
     this.clearActions();
         var actionTimes = this.makeActionTimes();
@@ -321,7 +346,7 @@ BattleManager.startBattle = function() {
 	this._actorsLength = $gameParty.members().length
 	//$gameParty.makeActions();
 	$gameTroop.makeActions();
-	$gameTroop.increaseTurn();
+	//$gameTroop.increaseTurn();
 	this.refreshStatus();
 	this._activeActor = null;
 	this._isEnemySubject = false;
@@ -428,6 +453,7 @@ BattleManager.processTurn = function() {
 			action.prepare();
 			if (action.isValid()) {
 				this.startAction();
+				subject._turnCount++;
 			}
 			subject.removeCurrentAction();
 			if (subject.isEnemy()){
