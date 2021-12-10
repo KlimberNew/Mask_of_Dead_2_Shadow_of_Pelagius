@@ -340,9 +340,14 @@ BattleManager.startBattle = function() {
 	battlers = [];
 	battlers = battlers.concat($gameParty.members());
 	battlers = battlers.concat($gameTroop.members());
+	this._slowestBattler = battlers[0];
 	for (i = 0; i < battlers.length; i++){
 		this._battlersTurns.push([battlers[i], ATB.Param.Base, false]);
+		if (battlers[i].agi < this._slowestBattler.agi){
+			this._slowestBattler = battlers[i];
+		}
 	}
+	console.log("Slowest speed: " + this._slowestBattler.agi);
 	this._actorsLength = $gameParty.members().length
 	//$gameParty.makeActions();
 	$gameTroop.makeActions();
@@ -382,15 +387,23 @@ BattleManager.update = function() {
 			if (this._battlersTurns[i][1] <= 0){
 				this._battlersTurns[i][2] = true;
 				this._battlersTurns[i][1] = ATB.Param.Base;
+				if (this._battlersTurns[i][0] == this._slowestBattler){
+					console.log("Slowest");
+					$gameTroop.increaseTurn();
+				}
 				if (i < this._actorsLength){
 					this._playerTurn = true;
-					this._subject = $gameParty.members()[i]
+					this._subject = $gameParty.members()[i];
+					console.log(this._subject);
+					console.log("AGI: " + this._subject.agi);
 					this._activeActor = i;
 					this._isAction = true;
 				} else {
 					if ($gameTroop.members()[i - this._actorsLength].isAlive()){
 						if (!this._isEnemySubject){
 							this._subject = $gameTroop.members()[i - this._actorsLength];
+							console.log(this._subject);
+							console.log("AGI: " + this._subject.agi);
 							this._isEnemySubject = true;
 						} else {
 							this._actionEnemies.push($gameTroop.members()[i - this._actorsLength]);
