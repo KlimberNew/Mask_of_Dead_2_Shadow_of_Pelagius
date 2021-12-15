@@ -56,6 +56,12 @@ ATB.Param.HudX = ATB.Parameters['hud_x'] || "Graphics.width - (2 - id % 2 ) * 25
 ATB.Param.HudY = ATB.Parameters['hud_y'] || "Graphics.height - (2 - Math.floor(id / 2)) * 125 - 20"
 
  
+function doPathExist(path_to_file){
+	const fs = require('fs');
+	var path = require('path');
+	return fs.existsSync(path.join(path.dirname(process.mainModule.filename), path_to_file));
+}
+
 ///===HitZone===///
  
 //Window_HitZone 
@@ -347,11 +353,8 @@ BattleManager.startBattle = function() {
 			this._slowestBattler = battlers[i];
 		}
 	}
-	console.log("Slowest speed: " + this._slowestBattler.agi);
 	this._actorsLength = $gameParty.members().length
-	//$gameParty.makeActions();
 	$gameTroop.makeActions();
-	//$gameTroop.increaseTurn();
 	this.refreshStatus();
 	this._activeActor = null;
 	this._isEnemySubject = false;
@@ -388,22 +391,17 @@ BattleManager.update = function() {
 				this._battlersTurns[i][2] = true;
 				this._battlersTurns[i][1] = ATB.Param.Base;
 				if (this._battlersTurns[i][0] == this._slowestBattler){
-					console.log("Slowest");
 					$gameTroop.increaseTurn();
 				}
 				if (i < this._actorsLength){
 					this._playerTurn = true;
 					this._subject = $gameParty.members()[i];
-					console.log(this._subject);
-					console.log("AGI: " + this._subject.agi);
 					this._activeActor = i;
 					this._isAction = true;
 				} else {
 					if ($gameTroop.members()[i - this._actorsLength].isAlive()){
 						if (!this._isEnemySubject){
 							this._subject = $gameTroop.members()[i - this._actorsLength];
-							console.log(this._subject);
-							console.log("AGI: " + this._subject.agi);
 							this._isEnemySubject = true;
 						} else {
 							this._actionEnemies.push($gameTroop.members()[i - this._actorsLength]);
@@ -600,8 +598,7 @@ Spriteset_Battle.prototype.createATBActor = function(){
 	this._atbActors = [];
 	for (i in $gameParty.battleMembers()){
 		id = $gameParty._actors[i]
-		const fs = require('fs');
-		if (fs.existsSync("img/system/Actor_" + id + ".png")){
+		if (doPathExist("img/system/Actor_" + id + ".png")){
 			filename = "Actor_" + id;
 		} else{		
 			filename = "Actor_N"
@@ -615,8 +612,7 @@ Spriteset_Battle.prototype.createATBEnemies = function(){
 	this._atbEnemies = [];
 		for (i = 0; i < $gameTroop._enemies.length; i++){
 			id = $gameTroop._enemies[i]._enemyId;
-			const fs = require('fs');
-			if (fs.existsSync("img/system/Enemy_" + id + ".png")){
+			if (doPathExist("img/system/Enemy_" + id + ".png")){
 				filename = "Enemy_" + id;
 			} else{
 				filename = "Enemy_N"
@@ -1163,8 +1159,7 @@ Sprite_HUDEnemyFace.prototype.constructor = Sprite_HUDEnemyFace;
 Sprite_HUDEnemyFace.prototype.initialize = function(id){
 	Sprite_Base.prototype.initialize.call(this);
 	this._id = id
-	const fs = require('fs');
-	if (fs.existsSync("img/BFace/Boss" + this._id + ".png")){
+	if (doPathExist("img/BFace/Boss" + this._id + ".png")){
 		filename = "Boss" + this._id;
 	} else{
 		filename = "BossN"
