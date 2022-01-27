@@ -41,6 +41,14 @@
  * Skill 5 - Legs
  * Skill 6 - Arms
  * 
+ * Layout 1 (прямоугольник 2 на 2):
+ * hud_x: Graphics.width - (2 - id % 2 ) * 250
+ * hud_y: Graphics.height - (2 - Math.floor(id / 2)) * 125 - 20
+ * 
+ * Layout 2 (слева направо):
+ * hud_x: id * 230
+ * hud_y: Graphics.height - 145
+ * 
  */
  ATB = {}
  
@@ -359,6 +367,24 @@ BattleManager.startBattle = function() {
 	this._activeActor = null;
 	this._isEnemySubject = false;
 };
+
+//REMOVED MESSAGES
+BattleManager.displayStartMessages = function() {
+};
+
+BattleManager.displayVictoryMessage = function() {
+};
+
+BattleManager.displayDefeatMessage = function() {
+};
+
+BattleManager.displayEscapeSuccessMessage = function() {
+};
+
+BattleManager.displayEscapeFailureMessage = function() {
+};
+
+//
 
 BattleManager_update = BattleManager.update;
 BattleManager.update = function() {
@@ -827,7 +853,7 @@ Sprite_HPBar.prototype.constructor = Sprite_HPBar;
 Sprite_HPBar.prototype.initialize = function(base){
 	Sprite_Base.prototype.initialize.call(this);
 	this.base = base;
-	this.bitmap = new Bitmap(140,36);
+	this.bitmap = new Bitmap(125,36);
 	this.bitmap.gradientFillRect(0,18,this.bitmap.width,18,textcolor(20), textcolor(21));
 	this.x = this.base.x + 100;
 	this.y = this.base.y + 10 - 18;
@@ -894,6 +920,7 @@ Sprite_TextOnBars.prototype.initialize = function(base){
 	this.base = base;
 	this._id = base._id;
 	this.bitmap = new Bitmap(123,108);
+	this._bitmap.fontSize = 26;
 	this.x = this.base.x + 100;
 	this.y = this.base.y + 10 - 18;
 	this.bitmap.textColor = textcolor(16);
@@ -917,6 +944,7 @@ Sprite_TextOnBarsNum.prototype.initialize = function(base){
 	this.base = base;
 	this._id = base._id;
 	this.bitmap = new Bitmap(140,108);
+	this._bitmap.fontSize = 26;
 	this.x = this.base.x + 100;
 	this.y = this.base.y + 10 - 18;
 	this.drawText();
@@ -930,7 +958,7 @@ Sprite_TextOnBarsNum.prototype.drawText = function(){
 	hptext = $gameParty.members()[this._id].hp + "/" + $gameParty.members()[this._id].mhp
 	mptext = $gameParty.members()[this._id].mp + "/" + $gameParty.members()[this._id].mmp
 	tptext = $gameParty.members()[this._id].tp
-	this.bitmap.drawText(hptext, 140-this.bitmap.measureTextWidth(hptext), 4, 140, 36);
+	this.bitmap.drawText(hptext, 123-this.bitmap.measureTextWidth(hptext), 4, 123, 36);
 	this.bitmap.drawText(mptext, 123-this.bitmap.measureTextWidth(mptext), 35, 123, 36);
 	this.bitmap.drawText(tptext, 123-this.bitmap.measureTextWidth(tptext), 68, 123, 36);
 }
