@@ -25,7 +25,6 @@ function setEnemyVision(eventId, width, height, selfSwitch){
     $gameMap.event(eventId).setIsEnemy(true);
     $gameMap.event(eventId).setEnemySelfSwitch(selfSwitch);
     $gameMap.event(eventId).setVision(width, height);
-    //$gameMap.event(eventId).setVisionSprite(drawStealthRect(eventId, width, height));
 }
 
 function drawStealthRect(eventId, width, height){
@@ -34,41 +33,7 @@ function drawStealthRect(eventId, width, height){
     return sprite;
 }
 
-//====Game_Map edit=====//
 selfSwitchLetters = ["A", "B", "C", "D"]
-
-Stealth_Game_Map_prototype_setup = Game_Map.prototype.setup;
-Game_Map.prototype.setup = function(mapId) {
-    Stealth_Game_Map_prototype_setup.call(this, mapId);
-    events = this._events;
-    events.forEach(function(i){
-        if (i.page() == undefined || i.page().list == undefined){
-            return;
-        }
-        first = i.page().list[0]; 
-        if (first == undefined){
-            return;
-        }
-        if (first.code == 356){
-            params = first.parameters[0].split(" ");
-            if (params[0] == "Stealth"){
-                width = parseInt(params[1]);
-                if (!width){
-                    throw new Error("Width has to be an integer! (" + params +")");
-                }
-                height = parseInt(params[2]);
-                if (!height){
-                    throw new Error("Height has to be an integer! (" + params +")");
-                }
-                letter = params[3].toUpperCase();
-                if (!selfSwitchLetters.contains(letter)){
-                    throw new Error("Self switch has to be a letter A, B, C, or D! (" + params +")");
-                }
-                setEnemyVision(i.eventId(), width, height, letter);
-        }
-      }
-    })
-};
 
 //====Game_Event edit=====//
 
@@ -80,6 +45,38 @@ Game_Event.prototype.initMembers = function() {
     this._visionWidth = 0;
     this._visionHeight = 0;
     this._visionSprite = null;
+};
+
+Stealth_Game_Event_setupPageSettings = Game_Event.prototype.setupPageSettings;
+Game_Event.prototype.setupPageSettings = function() {
+    Stealth_Game_Event_setupPageSettings.call(this);
+    if (this.page() == undefined || this.page().list == undefined){
+        return;
+    }
+    first = this.page().list[0]; 
+    if (first == undefined){
+        return;
+    }
+    if (first.code == 356){
+        params = first.parameters[0].split(" ");
+        if (params[0] == "Stealth"){
+            width = parseInt(params[1]);
+            if (!width){
+                throw new Error("Width has to be an integer! (" + params +")");
+            }
+            height = parseInt(params[2]);
+            if (!height){
+                throw new Error("Height has to be an integer! (" + params +")");
+            }
+            letter = params[3].toUpperCase();
+            if (!selfSwitchLetters.contains(letter)){
+                throw new Error("Self switch has to be a letter A, B, C, or D! (" + params +")");
+            }
+            this.setIsEnemy(true);
+            this.setEnemySelfSwitch(letter);
+            this.setVision(width, height);
+        }
+    }
 };
 
 Game_Event.prototype.setIsEnemy = function(isEnemy){
@@ -107,8 +104,6 @@ Game_Event.prototype.update = function() {
             this._isEnemy = false;
             var key = [this._mapId, this._eventId, this._enemySelfSwitch];
             $gameSelfSwitches.setValue(key, true);
-            //$gamePlayer.requestBalloon(1);
-            //this._visionSprite.destroy();
         };
     }
 };
