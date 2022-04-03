@@ -106,14 +106,40 @@ Game_Interpreter.prototype.pluginCommand = function(command, args) {
     }
 };
 
-LocalMap.Visited = {};
 
-LocalMap.isVisited = function(map, part){
-    var zone = LocalMap.Visited[map];
+LocalMap_Game_System_initialize = Game_System.prototype.initialize;
+Game_System.prototype.initialize = function() {
+    LocalMap_Game_System_initialize.call(this);
+    this._visitedMaps = {};
+};
+
+Game_System.prototype.localMapIsVisited = function(map, part){
+    if (this._visitedMaps == undefined){
+        this._visitedMaps = {};
+        var zone = $dataMap.meta.zone;
+        if (zone != undefined){
+            var zone = zone.split(",");
+            $gameSystem.localMapCheckAsVisited(zone[0], zone[1]);
+            return true;
+        }
+        return false;
+    }
+    var zone = this._visitedMaps[map];
     if (zone == undefined){
         return false;
     }
-    return zone.has(part);
+    return zone.contains(Number(part));
+}
+
+Game_System.prototype.localMapCheckAsVisited = function(map, part){
+    if (this._visitedMaps == undefined){
+        this._visitedMaps = {};
+    }
+    if (this._visitedMaps[map] == undefined){
+        this._visitedMaps[map] = [];
+    }
+    if (!this._visitedMaps[map].contains(Number(part)))
+    this._visitedMaps[map].push(Number(part));
 }
 
 LocalMap_Game_Map_prototype_initialize = Game_Map.prototype.initialize;
@@ -138,10 +164,7 @@ Game_Map.prototype.setup = function(mapId) {
             this._localMapWidth = local_map["Width"];
             this._localMapHeight = local_map["Height"];
         }
-        if (LocalMap.Visited[zone[0]] == undefined){
-            LocalMap.Visited[zone[0]] = new Set();
-        }
-        LocalMap.Visited[zone[0]].add(Number(zone[1]));
+        $gameSystem.localMapCheckAsVisited(zone[0], zone[1]);
     } else {
         this._localMap = null;
         this._localMapPart = 0;
@@ -163,7 +186,7 @@ Scene_Menu.prototype.create = function() {
     LocalMap_Scene_Menu_prototype_create.apply(this);
     if ($gameMap._localMap != null){
         for (let i = 1; i <= $gameMap._localMapWidth * $gameMap._localMapHeight; i++){
-            if (LocalMap.isVisited($gameMap._localMap, i)){
+            if ($gameSystem.localMapIsVisited($gameMap._localMap, i)){
                 LocalMap.reserveLocalMap("LM_" + $gameMap._localMap + "_" + i);
             }
         }
@@ -228,7 +251,7 @@ Window_LocalMap.prototype.initialize = function() {
     this._mapBitmap = []
     if ($gameMap._localMap != null){
         for (let i = 1; i <= $gameMap._localMapWidth * $gameMap._localMapHeight; i++){
-            if (LocalMap.isVisited($gameMap._localMap, i)){
+            if ($gameSystem.localMapIsVisited($gameMap._localMap, i)){
                 this._mapBitmap.push(LocalMap.loadLocalMap("LM_" + $gameMap._localMap + "_" + i))
             } else {
                 this._mapBitmap.push(LocalMap.loadLocalMap("LM_Dark_flat"))}
