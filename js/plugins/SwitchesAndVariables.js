@@ -49,3 +49,9 @@ function mix(arr) {
 function cE(ce){
 	$gameTemp.reserveCommonEvent(ce)
 }
+
+/* Ещё одно упрощение) */
+function tev(e=0){
+    if (e==0) e=$gameMap._interpreter._eventId
+	return $gameMap.event(e)
+}
