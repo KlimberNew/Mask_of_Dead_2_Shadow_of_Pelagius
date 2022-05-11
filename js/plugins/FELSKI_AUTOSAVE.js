@@ -39,6 +39,16 @@ Felski.AUTOSAVE.version = 1.01;
 * V1.0.1
 * - fixed compatibility with Yanfly's Save Core plugin.
 * - added a plugin parameter to disable the auto save feature.
+* 
+* V1.1 Zero_G alt
+* - Stop the focus on the auto save slots when opening the scene load or scene 
+*   save screens.
+* - Added function to create a backup each time you overwrite a savefile. Load 
+*   such backup by pressing 'shift' in the Load Screen save slot. 
+*
+* V1.1.1 Zero_G alt
+* - Disabled autosave while moveroute is forced, only save when moving via
+*   inputs
 *
 * @param Save Settings
 *
@@ -81,6 +91,14 @@ Felski.AUTOSAVE.version = 1.01;
 * @type String
 * @default Autosave
 *
+* @param Change Save Titles
+* @parent Save Texts
+* @desc Change Save Titles?
+* @type Bollean
+* @on change titles enabled
+* @off change titles disabled
+* @default false
+*
 * @param Save After Map Change Text
 * @parent Save Texts
 * @desc Text that is displayed for a after map change auto saves.
@@ -117,9 +135,124 @@ Felski.AUTOSAVE.standardText = String(parameters['Save Standard Text'] || 'Norma
 Felski.AUTOSAVE.enableAutosave = String(parameters['Enable Auto Saving'] || 'true');
 Felski.AUTOSAVE.enableAutosave = eval(Felski.AUTOSAVE.enableAutosave);
 
+Felski.AUTOSAVE.enableChangeSaveTitles = String(parameters['Change Save Titles'] || 'false');
+Felski.AUTOSAVE.enableChangeSaveTitles = eval(Felski.AUTOSAVE.enableChangeSaveTitles);
+
 Felski.AUTOSAVE.triggerText = Felski.AUTOSAVE.standardText;
 
 (function() {
+    var paused = false;
+
+    // Zero_G don't delete save backups
+    // Overwrite
+    Scene_Save.prototype.onSaveSuccess = function() {
+        SoundManager.playSave();
+        //StorageManager.cleanBackup(this.savefileId()); // Remove backup delete
+        this.popScene();
+    };
+
+    // **Zero_G load backup on different button press**
+
+    // Add handler for shift
+    var ZERO_Scene_File_prototype_createListWindow = Scene_File.prototype.createListWindow;
+    Scene_File.prototype.createListWindow = function() {
+        ZERO_Scene_File_prototype_createListWindow.call(this);
+        this._listWindow.setHandler('shift',  this.onSavefileAlt.bind(this));
+    }
+
+    Window_Selectable.prototype.callShiftHandler = function() {
+        this.callHandler('shift');
+    };
+
+    Window_Selectable.prototype.processSelect = function() {
+        if (SceneManager._scene instanceof Scene_Load){
+            if (this.isCurrentItemEnabled()) {
+                this.playOkSound();
+                this.updateInputData();
+                this.deactivate();
+                this.callShiftHandler();
+            } else {
+                this.playBuzzerSound();
+            }
+        }
+    };
+
+    var ZERO_Window_Selectable_prototype_processHandling = Window_Selectable.prototype.processHandling;
+    Window_Selectable.prototype.processHandling = function() {
+        ZERO_Window_Selectable_prototype_processHandling.call(this);
+        if (this.isOpenAndActive() && Input.isRepeated('shift')) this.processSelect();
+    }
+    
+    Scene_File.prototype.onSavefileAlt = function() {
+    };
+
+    Scene_Load.prototype.onSavefileAlt = function() {
+        if (DataManager.loadBackupGame(this.savefileId())) {
+            this.onLoadSuccess();
+        } else {
+            this.onLoadFailure();
+        }
+    };
+
+    DataManager.loadBackupGame = function(savefileId) {
+        try {
+            var globalInfo = this.loadGlobalInfo();
+            if (StorageManager.localFileBackupExists(savefileId)) {
+                var json = StorageManager.loadFromLocalBackupFile(savefileId);
+                this.createGameObjects();
+                this.extractSaveContents(JsonEx.parse(json));
+                this._lastAccessedId = savefileId;
+                return true;
+            } else {
+                return false;
+            }
+        } catch (e) {
+            console.error(e);
+            return false;
+        }
+    };
+
+    
+    // **Begin Maintain focus on last save by Zero_G**
+    var autosave = false;
+
+    var ZERO_DataManager_saveGameWithoutRescue = DataManager.saveGameWithoutRescue;
+    DataManager.saveGameWithoutRescue = function(savefileId) {
+        let prevLastAccessId = this._lastAccessedId;
+        ZERO_DataManager_saveGameWithoutRescue.call(this, savefileId);
+        if (autosave) this._lastAccessedId = prevLastAccessId;
+        return true;
+    }
+
+    var ZERO_DataManager_makeSavefileInfo = DataManager.makeSavefileInfo;
+    DataManager.makeSavefileInfo = function() {
+        var info = ZERO_DataManager_makeSavefileInfo.call(this);
+        if (autosave) info.timestamp = 0
+
+        return info;
+    }
+    // **End Maintain focus on last save by Zero_G**
+
+    /*** Zero_G, start of determining if during an event ***/
+
+    // Determine if walking during event
+    var duringEvent = true;
+
+    var ZERO_processMoveCommand = Game_Character.prototype.processMoveCommand;
+    Game_Character.prototype.processMoveCommand = function(command) {
+        duringEvent = true;
+        ZERO_processMoveCommand.call(this, command);
+    };
+
+    // Determine if walking via inputs
+    var ZERO_Game_Player_prototype_isNormal = Game_Player.prototype.isNormal;
+    Game_Player.prototype.isNormal = function() {
+        if (this._vehicleType === 'walk' && !this.isMoveRouteForcing()){
+            duringEvent = false;
+        }
+        return ZERO_Game_Player_prototype_isNormal.call(this);
+    };
+    /*** Zero_G, end of determining if during an event ***/
 
 //************************************************************************************************
 //
@@ -130,6 +263,7 @@ Felski.AUTOSAVE.triggerText = Felski.AUTOSAVE.standardText;
     Game_System.prototype.autoSaveGame = function() {
         if(!Felski.AUTOSAVE.enableAutosave) return;
         $gameSystem.onBeforeSave();
+        autosave = true;
         if (DataManager.saveGame(Felski.AUTOSAVE.saveCounter)) {
             console.log("Autosave successful. Saved in slot "+ Felski.AUTOSAVE.saveCounter + " with trigger " + Felski.AUTOSAVE.triggerText);
             StorageManager.cleanBackup(Felski.AUTOSAVE.saveCounter);
@@ -141,6 +275,7 @@ Felski.AUTOSAVE.triggerText = Felski.AUTOSAVE.standardText;
         } else {
             console.warn("Autosave Failed.");
         }
+        autosave = false;
     };
 
 
@@ -166,7 +301,7 @@ Felski.AUTOSAVE.triggerText = Felski.AUTOSAVE.standardText;
     Felski.AUTOSAVE.DataManager_makeSavefileInfo = DataManager.makeSavefileInfo;
     DataManager.makeSavefileInfo = function() {
         var info = Felski.AUTOSAVE.DataManager_makeSavefileInfo.call(this);
-        info.title = Felski.AUTOSAVE.triggerText;
+        if(Felski.AUTOSAVE.enableChangeSaveTitles) info.title = Felski.AUTOSAVE.triggerText;
         return info;
     };
 
@@ -204,10 +339,9 @@ Felski.AUTOSAVE.triggerText = Felski.AUTOSAVE.standardText;
 
     Scene_Menu.prototype.popScene = function() {
         Scene_Base.prototype.popScene.call(this);
-        if(Felski.AUTOSAVE.onMenuExit) {
-            Felski.AUTOSAVE.triggerText = Felski.AUTOSAVE.onMenuExitText;
+        if(Felski.AUTOSAVE.onMenuExit && !paused && !duringEvent) {
+            if(Felski.AUTOSAVE.enableChangeSaveTitles) Felski.AUTOSAVE.triggerText = Felski.AUTOSAVE.onMenuExitText;
             $gameSystem.autoSaveGame();
-
         }
     };
 
@@ -223,7 +357,7 @@ Felski.AUTOSAVE.triggerText = Felski.AUTOSAVE.standardText;
         if(this.savefileId() <= Felski.AUTOSAVE.slots){
             this.onSaveFailure();
         }else{
-            Felski.AUTOSAVE.triggerText = Felski.AUTOSAVE.standardText;
+            if(Felski.AUTOSAVE.enableChangeSaveTitles) Felski.AUTOSAVE.triggerText = Felski.AUTOSAVE.standardText;
             Felski.AUTOSAVE.Scene_Save_onSavefileOk.call(this);
         }
     };
@@ -238,8 +372,8 @@ Felski.AUTOSAVE.triggerText = Felski.AUTOSAVE.standardText;
     Game_Player.prototype.performTransfer = function() {
         Felski.AUTOSAVE.Game_Player_performTransfer.call(this);
         if (this._newMapId > 0) {
-            if(Felski.AUTOSAVE.onMapChange) {
-                Felski.AUTOSAVE.triggerText = Felski.AUTOSAVE.onMapChangeText;
+            if(Felski.AUTOSAVE.onMapChange && !paused && !duringEvent) {
+                if(Felski.AUTOSAVE.enableChangeSaveTitles) Felski.AUTOSAVE.triggerText = Felski.AUTOSAVE.onMapChangeText;
                 $gameSystem.autoSaveGame();
             }
         }
@@ -255,8 +389,8 @@ Felski.AUTOSAVE.triggerText = Felski.AUTOSAVE.standardText;
     Felski.AUTOSAVE.Game_Interpreter_command201 = Game_Interpreter.prototype.command201;
     Game_Interpreter.prototype.command201 = function() {
         Felski.AUTOSAVE.Game_Interpreter_command201.call(this);
-        if(Felski.AUTOSAVE.onMapChange) {
-            Felski.AUTOSAVE.triggerText = Felski.AUTOSAVE.onMapChangeText;
+        if(Felski.AUTOSAVE.onMapChange && !paused && !duringEvent) {
+            if(Felski.AUTOSAVE.enableChangeSaveTitles) Felski.AUTOSAVE.triggerText = Felski.AUTOSAVE.onMapChangeText;
             $gameSystem.autoSaveGame();
         }
     };
@@ -264,9 +398,18 @@ Felski.AUTOSAVE.triggerText = Felski.AUTOSAVE.standardText;
     Felski.AUTOSAVE.Game_Interpreter_pluginCommand = Game_Interpreter.prototype.pluginCommand;
     Game_Interpreter.prototype.pluginCommand = function(command, args) {
         Felski.AUTOSAVE.Game_Interpreter_pluginCommand.call(this, command, args);
-        command = command.toUpperCase(); 
-        if (command === 'AUTOSAVE'){
-            $gameSystem.autoSaveGame();
+        command = command.trim().toUpperCase();
+        switch (command)
+        {
+            case 'AUTOSAVE':
+                $gameSystem.autoSaveGame();
+                break;
+            case 'PAUSEAUTOSAVE':
+                paused = true;
+                break;
+            case 'RESUMEAUTOSAVE':
+                paused = false;
+                break;
         }
     };
 
@@ -287,7 +430,7 @@ Felski.AUTOSAVE.triggerText = Felski.AUTOSAVE.standardText;
         };
 
         Scene_Save.prototype.onSavefileOk = function() {
-            Felski.AUTOSAVE.triggerText = Felski.AUTOSAVE.standardText;
+            if(Felski.AUTOSAVE.enableChangeSaveTitles) Felski.AUTOSAVE.triggerText = Felski.AUTOSAVE.standardText;
             Felski.AUTOSAVE.Scene_Save_onSavefileOk.call(this);
         };
 
