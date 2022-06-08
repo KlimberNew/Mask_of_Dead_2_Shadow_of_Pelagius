@@ -384,6 +384,11 @@ BattleManager.displayEscapeSuccessMessage = function() {
 BattleManager.displayEscapeFailureMessage = function() {
 };
 
+Window_BattleLog.prototype.addText = function(text) {
+};
+
+
+
 //
 
 BattleManager_update = BattleManager.update;
@@ -700,7 +705,7 @@ Sprite_ATBActor.prototype.initialize = function(picture, atbBase, id){
 
 Sprite_ATBActor.prototype.update = function(){
 	Sprite_Base.prototype.update.call(this);
-	if (this._atbBase != undefined && BattleManager._battlersTurns != undefined && BattleManager._battlersTurns[this._id] != undefined){
+	if (this._atbBase != undefined && BattleManager._battlersTurns != undefined){
 		this.x = this._atbBase.x;
 		if (BattleManager._battlersTurns[this._id][1] == ATB.Param.Base){
 			this.y = 0
