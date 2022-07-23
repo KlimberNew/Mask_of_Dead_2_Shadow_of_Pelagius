@@ -25,8 +25,11 @@
  * 
  * @help
  * Plugin commands:
- * - LocalMapChangePlayerIcon filename - change player icon in local map to filename
+ * - LocalMapChangePlayerIcon filename - change player icon in local map 
+ * to filename
  * - LocalMapResetPlayerIcon - reset player icon in local map to default
+ * - EnableLocalMap - enable access to local map
+ * - DisableLocalMap - disable access to local map
  * 
  * To mark that map belongs to local map use notetag:
  * <zone:world,1>
@@ -104,6 +107,12 @@ Game_Interpreter.prototype.pluginCommand = function(command, args) {
     if (command === 'LocalMapResetPlayerIcon'){
         LocalMap.PlayerIcon = LocalMap.Param.DefaultPlayerIcon;
     }
+    if (command === 'EnableLocalMap'){
+        $gameSystem.enableLocalMap();
+    }
+    if (command === 'DisableLocalMap'){
+        $gameSystem.disableLocalMap();
+    }
 };
 
 
@@ -111,6 +120,7 @@ LocalMap_Game_System_initialize = Game_System.prototype.initialize;
 Game_System.prototype.initialize = function() {
     LocalMap_Game_System_initialize.call(this);
     this._visitedMaps = {};
+    this._isLocalMapEnabled = true;
 };
 
 Game_System.prototype.localMapIsVisited = function(map, part){
@@ -141,6 +151,19 @@ Game_System.prototype.localMapCheckAsVisited = function(map, part){
     if (!this._visitedMaps[map].contains(Number(part)))
     this._visitedMaps[map].push(Number(part));
 }
+
+Game_System.prototype.isLocalMapEnabled = function(){
+    return this._isLocalMapEnabled;
+}
+
+Game_System.prototype.enableLocalMap = function(){
+    this._isLocalMapEnabled = true;
+}
+
+Game_System.prototype.disableLocalMap = function(){
+    this._isLocalMapEnabled = false;
+}
+
 
 LocalMap_Game_Map_prototype_initialize = Game_Map.prototype.initialize;
 Game_Map.prototype.initialize = function() {
@@ -177,7 +200,7 @@ LocalMap_Scene_Menu_prototype_createCommandWindow = Scene_Menu.prototype.createC
 
 Scene_Menu.prototype.createCommandWindow = function() {
     LocalMap_Scene_Menu_prototype_createCommandWindow.apply(this);
-    this._commandWindow.setHandler('localMap',    this.commandLocalMap.bind(this));
+    this._commandWindow.setHandler('localMap', this.commandLocalMap.bind(this));
 };
 
 LocalMap_Scene_Menu_prototype_create = Scene_Menu.prototype.create;
@@ -215,7 +238,7 @@ LocalMap_Window_MenuCommand_prototype_addOriginalCommands = Window_MenuCommand.p
 
 Window_MenuCommand.prototype.addOriginalCommands = function() {
     LocalMap_Window_MenuCommand_prototype_addOriginalCommands.apply(this);
-    this.addCommand(LocalMap.Param.CommandName, 'localMap', true);
+    this.addCommand(LocalMap.Param.CommandName, 'localMap', $gameSystem.isLocalMapEnabled());
 };
 
 
