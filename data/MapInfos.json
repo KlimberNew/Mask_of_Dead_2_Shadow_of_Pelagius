@@ -149,5 +149,5 @@ null,
 {"id":147,"expanded":false,"name":"+ Подземный сектор(Опасный перекресток)","order":145,"parentId":144,"scrollX":982.8,"scrollY":553.1999999999999},
 {"id":148,"expanded":true,"name":"+ Подземный сектор(Ресурсы)","order":146,"parentId":144,"scrollX":982.8,"scrollY":553.1999999999999},
 {"id":149,"expanded":false,"name":"+ Подземный сектор(Опасный коридор)","order":147,"parentId":144,"scrollX":982.8,"scrollY":553.1999999999999},
-{"id":150,"expanded":false,"name":"+ Подземный сектор(Связующий коридор)","order":148,"parentId":144,"scrollX":973.1999999999999,"scrollY":614.4}
+{"id":150,"expanded":false,"name":"+ Подземный сектор(Связующий коридор)","order":148,"parentId":144,"scrollX":973.1999999999999,"scrollY":553.1999999999999}
 ]
