@@ -16,6 +16,10 @@
  * 
  * Also you can call this script to set an event as enemy:
  * drawStealthRect(eventId, width, height, selfSwitch)
+ * 
+ * Circle 1 A
+ * Creates an area of circular vision. 
+ * Upon entering the line of sight, activates the local scenario A-D. *
  */
 
 
@@ -33,6 +37,12 @@ function drawStealthRect(eventId, width, height){
     return sprite;
 }
 
+function drawStealthCircle(eventId, radius){
+    var sprite = new Sprite_StealthRadius(eventId, radius)
+    SceneManager._scene._spriteset.addChild(sprite);
+    return sprite;
+}
+
 selfSwitchLetters = ["A", "B", "C", "D"]
 
 //====Game_Event edit=====//
@@ -45,6 +55,8 @@ Game_Event.prototype.initMembers = function() {
     this._visionWidth = 0;
     this._visionHeight = 0;
     this._visionSprite = null;
+    this._circleVisionRadius = 0;
+    this._enemySelfSwitchCircle = null;
 };
 
 Stealth_Game_Event_setupPageSettings = Game_Event.prototype.setupPageSettings;
@@ -53,7 +65,7 @@ Game_Event.prototype.setupPageSettings = function() {
     if (this.page() == undefined || this.page().list == undefined){
         return;
     }
-    first = this.page().list[0]; 
+    var first = this.page().list[0]; 
     if (first == undefined){
         return;
     }
@@ -76,6 +88,26 @@ Game_Event.prototype.setupPageSettings = function() {
             this.setEnemySelfSwitch(letter);
             this.setVision(width, height);
         }
+        var second = this.page().list[1]; 
+        if (second == undefined){
+            return;
+        }
+        if (second.code == 356){
+            params = second.parameters[0].split(" ");
+            if (params[0] == "Circle"){
+                radius = parseInt(params[1]);
+                if (!radius){
+                    throw new Error("Width has to be an integer! (" + params +")");
+                }
+                letter = params[2].toUpperCase();
+                if (!selfSwitchLetters.contains(letter)){
+                    throw new Error("Self switch has to be a letter A, B, C, or D! (" + params +")");
+                }
+                this.setIsEnemy(true);
+                this.setEnemySelfSwitchCircle(letter);
+                this.setCircleVision(radius);
+            }
+        }
     }
 };
 
@@ -87,9 +119,18 @@ Game_Event.prototype.setEnemySelfSwitch = function(selfSwitch){
     this._enemySelfSwitch = selfSwitch;
 }
 
+Game_Event.prototype.setEnemySelfSwitchCircle = function(selfSwitch){
+    this._enemySelfSwitchCircle = selfSwitch;
+}
+
+
 Game_Event.prototype.setVision = function(visionWidth, visionHeight){
     this._visionWidth = visionWidth;
     this._visionHeight = visionHeight;
+}
+
+Game_Event.prototype.setCircleVision = function(visionRadius){
+    this._circleVisionRadius = visionRadius;
 }
 
 Game_Event.prototype.setVisionSprite = function(visionSprite){
@@ -104,9 +145,29 @@ Game_Event.prototype.update = function() {
             this._isEnemy = false;
             var key = [this._mapId, this._eventId, this._enemySelfSwitch];
             $gameSelfSwitches.setValue(key, true);
+        } else if (this._enemySelfSwitchCircle != null && isPlayerInCircleRange(this, this._circleVisionRadius)){
+            this._isEnemy = false;
+            var key = [this._mapId, this._eventId, this._enemySelfSwitchCircle];
+            $gameSelfSwitches.setValue(key, true);
         };
     }
 };
+
+function isPlayerInCircleRange(event, radiusTiles){
+    var tileWidth = $gameMap.tileWidth();
+    var tileHeight = $gameMap.tileHeight();
+    this.x = (event._realX - radiusTiles) * tileWidth;
+    this.y = (event._realY - 1) * tileHeight;
+    this.width = tileWidth * (radiusTiles * 2 + 1);
+    this.height = tileHeight * (radiusTiles * 2 + 1);
+    
+    var player = $gamePlayer;
+    if ((player._realX + 0.5) * tileWidth > x && player._realX * tileWidth < x + width && 
+        (player._realY + 1) * tileHeight > y && player._realY * tileHeight < y + height){
+        return true;
+    }
+    return false;
+}
 
 function isPlayerInRange(event, widthTiles, heightTiles){
     var tileWidth = $gameMap.tileWidth();
@@ -206,4 +267,40 @@ Sprite_StealthRect.prototype.calculateRect = function(){
         this.height = tileHeight * this.heightTiles;
         this.y -= tileHeight * this.heightTiles;
     }
+}
+
+
+
+function Sprite_StealthRadius(){
+    this.initialize.apply(this, arguments);
+}
+
+Sprite_StealthRadius.prototype = Object.create(Sprite_Base.prototype);
+Sprite_StealthRadius.prototype.constructor = Sprite_StealthRadius;
+
+Sprite_StealthRadius.prototype.initialize = function(eventId, radius){
+	Sprite_Base.prototype.initialize.call(this);
+    this.event = $gameMap.event(eventId);
+    this.radiusTiles = radius;
+    this.calculateRect();
+	this.bitmap = new Bitmap(Math.max(this.width, this.height), Math.max(this.width, this.height));
+    this.bitmap.fillRect(0, 0, this.width, this.height);
+    this.setColorTone([255, 55, 55, 255])
+    this.opacity = 155;
+}
+
+Sprite_StealthRadius.prototype.update = function(){
+    Sprite_Base.prototype.update.call(this);
+    this.calculateRect();
+    this.bitmap.fillRect(0, 0, this.width, this.height);
+}
+
+Sprite_StealthRadius.prototype.calculateRect = function(){
+    var tileWidth = $gameMap.tileWidth();
+    var tileHeight = $gameMap.tileHeight();
+    
+    this.x = (this.event._realX - this.radiusTiles) * tileWidth;
+    this.y = (this.event._realY - 1) * tileHeight;
+    this.width = tileWidth * (this.radiusTiles * 2 + 1);
+    this.height = tileHeight * (this.radiusTiles * 2 + 1);
 }
