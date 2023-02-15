@@ -216,6 +216,24 @@ BattleManager.startTurn = function() {
 
 };
 
+Game_Battler.prototype.forceAction = function(skillId, targetIndex) {
+    //console.log(this._actions);
+	if (this._actions[0] == undefined || this._actions[0]._item._dataClass == ""){
+		this.clearActions();
+	}
+    var action = new Game_Action(this, true);
+    action.setSkill(skillId);
+    if (targetIndex === -2) {
+        action.setTarget(this._lastTargetIndex);
+    } else if (targetIndex === -1) {
+        action.decideRandomTarget();
+    } else {
+        action.setTarget(targetIndex);
+    }
+    this._actions.unshift(action);
+	console.log(this._actions);
+};
+
 Game_Battler_initMembers = Game_Battler.prototype.initMembers;
 Game_Battler.prototype.initMembers = function() {
     Game_Battler_initMembers.apply(this);
@@ -242,15 +260,16 @@ Game_Battler.prototype.makeActions = function() {
 
 Game_Enemy.prototype.makeActions = function() {
 	if (this._actions.length == 0){
-    Game_Battler.prototype.makeActions.call(this);
-    if (this.numActions() > 0) {
-        var actionList = this.enemy().actions.filter(function(a) {
-            return this.isActionValid(a);
-        }, this);
-        if (actionList.length > 0) {
-            this.selectAllActions(actionList);
-        }
-    }}
+		Game_Battler.prototype.makeActions.call(this);
+		if (this.numActions() > 0) {
+			var actionList = this.enemy().actions.filter(function(a) {
+				return this.isActionValid(a);
+			}, this);
+			if (actionList.length > 0) {
+				this.selectAllActions(actionList);
+			}
+		}
+	}
 }
 
 Scene_Battle.prototype.onSelectAction = function() {
@@ -304,6 +323,33 @@ Game_Enemy.prototype.performCollapse = function() {
 	spriteset = BattleManager._spriteset
 	spriteset.deleteInfo(this._atbEnemyId, spriteset._atbEnemies, 0)
     Game_Enemy_performCollapse.apply(this)
+};
+
+Game_Enemy.prototype.revive = function() {
+    Game_BattlerBase.prototype.revive.apply(this);
+	BattleManager._spriteset._battleField.addChild(BattleManager._spriteset._atbEnemies[this._atbEnemyId]);
+};
+
+Game_Actor_setup = Game_Actor.prototype.setup
+Game_Actor.prototype.setup = function(actorId) {
+    Game_Actor_setup.apply(this, arguments)
+	this._atbActorId = '';
+};
+
+Game_Actor.prototype.setAtbActor = function(atbActorId){
+	this._atbActorId = atbActorId;
+}
+
+Game_Actor_performCollapse = Game_Actor.prototype.performCollapse
+Game_Actor.prototype.performCollapse = function() {
+	spriteset = BattleManager._spriteset
+	spriteset.deleteInfo(this._atbActorId, spriteset._atbActors, 0)
+    Game_Actor_performCollapse.apply(this)
+};
+
+Game_Actor.prototype.revive = function() {
+    Game_BattlerBase.prototype.revive.apply(this);
+	BattleManager._spriteset._battleField.addChild(BattleManager._spriteset._atbActors[this._atbActorId]);
 };
 
 BattleManager_processVictory = BattleManager.processVictory;
@@ -485,7 +531,6 @@ BattleManager.invokeAction = function(subject, target) {
 	this.refreshStatus();
 };
 
-
 BattleManager.processTurn = function() {
 	var subject = this._subject;
 	if (subject.isEnemy() && this._battlersTurns[subject.index() + this._actorsLength][2] || 
@@ -553,11 +598,23 @@ BattleManager.updateEvent = function() {
 
     if (this.isActionForced() && !(this._phase === 'battleEnd') ) {
         this.processForcedAction();
-        return true;
+        //return true;
     } else if (!(this._phase === 'battleEnd')){
         return this.updateEventMain();
     }
     return this.checkAbort();
+};
+
+BattleManager.processForcedAction = function() {
+    if (this._actionForcedBattler) {
+        this._turnForced = true;
+        this._subject = this._actionForcedBattler;
+        if (this._subject._actions.length <= 1 || (this._subject.isEnemy() && this._battlersTurns[$gameParty.members().length + this._subject.index()][1] > 0)){
+			this._actionForcedBattler = null;
+		}
+        this.startAction();
+        this._subject.removeCurrentAction();
+    }
 };
 
 Scene_Battle.prototype.changeInputWindow = function() {
@@ -636,6 +693,7 @@ Spriteset_Battle.prototype.createATBActor = function(){
 		}
 		this._atbActors.push(new Sprite_ATBActor(filename, this._atbBase, i));
 		this._battleField.addChild(this._atbActors[i]);
+		$gameParty.members()[i].setAtbActor(i)
 	}
 }
 
@@ -707,6 +765,10 @@ Sprite_ATBActor.prototype.update = function(){
 	Sprite_Base.prototype.update.call(this);
 	if (this._atbBase != undefined && BattleManager._battlersTurns != undefined){
 		this.x = this._atbBase.x;
+		// !моя проверка!
+		for(var i = 3; i < 0; i++){
+			console.log(BattleManager._battlersTurns[this._id]);
+		}		
 		if (BattleManager._battlersTurns[this._id][1] == ATB.Param.Base){
 			this.y = 0
 		} else {
@@ -763,7 +825,7 @@ Sprite_ATBMagic.prototype.update = function(){
 		BattleManager._battlersTurns[this._id + $gameParty.members().length][0]._actions[0] != undefined) {
 
 		skill = BattleManager._battlersTurns[this._id + $gameParty.members().length][0]._actions[0]._item
-		if (skill._dataClass == "skill" && skill._itemId != 1) {
+		if (skill._dataClass == "skill") {
 			if ($dataSkills[skill._itemId].hitType != 0){
 				if ($dataSkills[skill._itemId].hitType == 1){
 					this.bitmap = this._physBitmap;
@@ -773,6 +835,7 @@ Sprite_ATBMagic.prototype.update = function(){
 				this.opacity = 255;
 			} else{
 				this.bitmap = this._netBitmap;
+				this.opacity = 255;
 			}
 		}
 		else{
