@@ -765,6 +765,10 @@ Sprite_ATBActor.prototype.update = function(){
 	Sprite_Base.prototype.update.call(this);
 	if (this._atbBase != undefined && BattleManager._battlersTurns != undefined){
 		this.x = this._atbBase.x;
+		// !моя проверка!
+		for(var i = 3; i < 0; i++){
+			console.log(BattleManager._battlersTurns[this._id]);
+		}		
 		if (BattleManager._battlersTurns[this._id][1] == ATB.Param.Base){
 			this.y = 0
 		} else {
