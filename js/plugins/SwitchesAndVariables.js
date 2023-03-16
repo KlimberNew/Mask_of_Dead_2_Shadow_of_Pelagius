@@ -52,6 +52,7 @@ function cE(ce){
 
 /* Ещё одно упрощение) */
 function tev(e=0){
+    if (e==-1) return $gamePlayer
     if (e==0) e=$gameMap._interpreter._eventId
 	return $gameMap.event(e)
 }

@@ -352,6 +352,12 @@ Game_Actor.prototype.revive = function() {
 	BattleManager._spriteset._battleField.addChild(BattleManager._spriteset._atbActors[this._atbActorId]);
 };
 
+Scene_Battle_terminate = Scene_Battle.prototype.terminate;
+Scene_Battle.prototype.terminate = function() {
+    Scene_Battle_terminate.call(this);
+	BattleManager._battlersTurns = undefined;
+};
+
 BattleManager_processVictory = BattleManager.processVictory;
 BattleManager.processVictory = function() {
     BattleManager_processVictory.apply(this)
@@ -765,10 +771,6 @@ Sprite_ATBActor.prototype.update = function(){
 	Sprite_Base.prototype.update.call(this);
 	if (this._atbBase != undefined && BattleManager._battlersTurns != undefined){
 		this.x = this._atbBase.x;
-		// !моя проверка!
-		for(var i = 3; i < 0; i++){
-			console.log(BattleManager._battlersTurns[this._id]);
-		}		
 		if (BattleManager._battlersTurns[this._id][1] == ATB.Param.Base){
 			this.y = 0
 		} else {
