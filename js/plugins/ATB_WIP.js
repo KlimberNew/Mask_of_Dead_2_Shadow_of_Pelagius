@@ -87,9 +87,9 @@ Window_HitZone.prototype.initialize = function(){
 
 Window_HitZone.prototype.makeCommandList = function(){
 	this.addCommand('Голова', 'head');
-	this.addCommand('Торс', 'torso');
-	this.addCommand('Ноги', 'legs');
+	this.addCommand('Торс', 'torso');	
 	this.addCommand('Руки', 'arms');
+	this.addCommand('Ноги', 'legs');
 }
 
 //Hit zone in scene
@@ -102,8 +102,8 @@ Scene_Battle.prototype.createHitZoneWindow = function(){
 	this._hitZoneWindow = new Window_HitZone();
 	this._hitZoneWindow.setHandler('head', this.onZoneOk.bind(this, 3));
 	this._hitZoneWindow.setHandler('torso', this.onZoneOk.bind(this, 4));
-	this._hitZoneWindow.setHandler('legs', this.onZoneOk.bind(this, 5));
 	this._hitZoneWindow.setHandler('arms', this.onZoneOk.bind(this, 6));
+	this._hitZoneWindow.setHandler('legs', this.onZoneOk.bind(this, 5));	
 	this._hitZoneWindow.setHandler('cancel', this.onZoneCancel.bind(this));
 	this._hitZoneWindow.deselect();
 	this._hitZoneWindow.width = 180;
