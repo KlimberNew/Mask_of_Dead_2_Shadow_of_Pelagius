@@ -342,8 +342,10 @@ Game_Actor.prototype.setAtbActor = function(atbActorId){
 
 Game_Actor_performCollapse = Game_Actor.prototype.performCollapse
 Game_Actor.prototype.performCollapse = function() {
-	spriteset = BattleManager._spriteset
-	spriteset.deleteInfo(this._atbActorId, spriteset._atbActors, 0)
+	if (SceneManager._scene == Scene_Battle){
+		spriteset = BattleManager._spriteset
+		spriteset.deleteInfo(this._atbActorId, spriteset._atbActors, 0)
+	}
     Game_Actor_performCollapse.apply(this)
 };
 
