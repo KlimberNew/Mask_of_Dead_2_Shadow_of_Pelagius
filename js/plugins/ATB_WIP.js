@@ -330,6 +330,14 @@ Game_Enemy.prototype.revive = function() {
 	BattleManager._spriteset._battleField.addChild(BattleManager._spriteset._atbEnemies[this._atbEnemyId]);
 };
 
+Game_Enemy.prototype.appear = function() {
+    Game_BattlerBase.prototype.appear.apply(this);
+	BattleManager._spriteset._battleField.addChild(BattleManager._spriteset._atbEnemies[this._atbEnemyId]);
+	BattleManager._spriteset._hudEnemies[this._atbEnemyId].opacity = 255;
+	BattleManager._spriteset._hudEnemiesAnim[this._atbEnemyId].opacity = 255;
+	BattleManager._spriteset._hudEnemiesNames[this._atbEnemyId].opacity = 255;
+};
+
 Game_Actor_setup = Game_Actor.prototype.setup
 Game_Actor.prototype.setup = function(actorId) {
     Game_Actor_setup.apply(this, arguments)
@@ -715,7 +723,9 @@ Spriteset_Battle.prototype.createATBEnemies = function(){
 				filename = "Enemy_N"
 			}
 			this._atbEnemies.push(new Sprite_ATBEnemy(filename, this._atbBase, i));
-			this._battleField.addChild(this._atbEnemies[i]);
+			if ($gameTroop._enemies[i].isAppeared()){
+				this._battleField.addChild(this._atbEnemies[i]);
+			}
 			$gameTroop._enemies[i].setAtbEnemy(i)
 		}
 }
@@ -1118,14 +1128,17 @@ Spriteset_Battle.prototype.createHUDEnemies = function(){
 			this._bossesCount++;
 		}
 		this._hudEnemies[i] = new Sprite_HUDEnemy(i);
+		this._hudEnemies[i].opacity = $gameTroop._enemies[i].isAppeared() ? 255 : 0;
 		this._hudEnemies[i].setup(this);
 		
 		this._battleField.addChild(this._hudEnemies[i]);
 		this._hudEnemiesAnim[i] = new Sprite_HUDEnemyAnim(i, this._hudEnemies[i]);
+		this._hudEnemiesAnim[i].opacity = $gameTroop._enemies[i].isAppeared() ? 255 : 0;
 		this._hudEnemiesAnim[i].setup(this);
 		
 		this._battleField.addChild(this._hudEnemiesAnim[i]);
 		this._hudEnemiesNames[i] = new Sprite_HUDEnemyName(i, this._hudEnemies[i]);
+		this._hudEnemiesNames[i].opacity = $gameTroop._enemies[i].isAppeared() ? 255 : 0;
 		this._battleField.addChild(this._hudEnemiesNames[i])
 		
 		if ($gameTroop._enemies[i].enemy().meta.Boss){
