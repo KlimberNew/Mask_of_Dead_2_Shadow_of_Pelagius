@@ -322,21 +322,33 @@ Game_Enemy_performCollapse = Game_Enemy.prototype.performCollapse
 Game_Enemy.prototype.performCollapse = function() {
 	spriteset = BattleManager._spriteset
 	spriteset.deleteInfo(this._atbEnemyId, spriteset._atbEnemies, 0)
+	this.hideHUD();
     Game_Enemy_performCollapse.apply(this)
 };
 
 Game_Enemy.prototype.revive = function() {
     Game_BattlerBase.prototype.revive.apply(this);
 	BattleManager._spriteset._battleField.addChild(BattleManager._spriteset._atbEnemies[this._atbEnemyId]);
+	this.showHUD();
 };
 
 Game_Enemy.prototype.appear = function() {
     Game_BattlerBase.prototype.appear.apply(this);
 	BattleManager._spriteset._battleField.addChild(BattleManager._spriteset._atbEnemies[this._atbEnemyId]);
+	this.showHUD();
+};
+
+Game_Enemy.prototype.showHUD = function(){
 	BattleManager._spriteset._hudEnemies[this._atbEnemyId].opacity = 255;
 	BattleManager._spriteset._hudEnemiesAnim[this._atbEnemyId].opacity = 255;
 	BattleManager._spriteset._hudEnemiesNames[this._atbEnemyId].opacity = 255;
 };
+
+Game_Enemy.prototype.hideHUD = function(){
+	BattleManager._spriteset._hudEnemies[this._atbEnemyId].opacity = 0;
+	BattleManager._spriteset._hudEnemiesAnim[this._atbEnemyId].opacity = 0;
+	BattleManager._spriteset._hudEnemiesNames[this._atbEnemyId].opacity = 0;
+}
 
 Game_Actor_setup = Game_Actor.prototype.setup
 Game_Actor.prototype.setup = function(actorId) {
@@ -1109,7 +1121,8 @@ Sprite_ActorStateIcon.prototype.initialize = function(id, base, prior){
 }
 
 Sprite_ActorStateIcon.prototype.refresh = function(){
-	iconIndex = $gameParty.members()[this._id].stateIcons()[this._prior];
+	var actor = $gameParty.members()[this._id]
+	var iconIndex = actor.allIcons()[this._prior];
     var pw = Window_Base._iconWidth;
     var ph = Window_Base._iconHeight;
 	var sx = iconIndex % 16 * pw;
