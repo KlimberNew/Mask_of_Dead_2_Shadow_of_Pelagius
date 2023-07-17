@@ -342,12 +342,18 @@ Game_Enemy.prototype.showHUD = function(){
 	BattleManager._spriteset._hudEnemies[this._atbEnemyId].opacity = 255;
 	BattleManager._spriteset._hudEnemiesAnim[this._atbEnemyId].opacity = 255;
 	BattleManager._spriteset._hudEnemiesNames[this._atbEnemyId].opacity = 255;
+	if (BattleManager._spriteset._enemyFaces[this._atbEnemyId] != undefined){
+		BattleManager._spriteset._enemyFaces[this._atbEnemyId].opacity = 255;
+	}
 };
 
 Game_Enemy.prototype.hideHUD = function(){
 	BattleManager._spriteset._hudEnemies[this._atbEnemyId].opacity = 0;
 	BattleManager._spriteset._hudEnemiesAnim[this._atbEnemyId].opacity = 0;
 	BattleManager._spriteset._hudEnemiesNames[this._atbEnemyId].opacity = 0;
+	if (BattleManager._spriteset._enemyFaces[this._atbEnemyId] != undefined){
+		BattleManager._spriteset._enemyFaces[this._atbEnemyId].opacity = 0;
+	}
 }
 
 Game_Actor_setup = Game_Actor.prototype.setup
