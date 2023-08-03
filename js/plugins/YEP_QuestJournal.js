@@ -567,6 +567,14 @@ Yanfly.Quest.version = 1.02;
  * set the variable to show which subtext is being used currently.
  * Example: $gameSystem.getQuestSubtextIndex(50)
  *
+ * //////////////////////--------Miznk-------//////////////////////
+ * $gameSystem.isQuestAdded(questId)
+ * 
+ * $gameSystem.isQuestAvailable(questId)
+ * 
+ * $gameSystem.isQuestCompleted(questId)
+ * 
+ * $gameSystem.isQuestFailed(questId)
  *
  * --- Conditional Branch Event's Script Calls ---
  *
@@ -3686,6 +3694,24 @@ Game_System.prototype.isQuestRewardUnclaimed = function(questId, objId) {
   } else {
     return false;
   }
+};
+
+///////////////////////////// Miznk code add //////////////////////////////
+
+Game_System.prototype.isQuestAdded = function(questId) {
+  return this.getAllQuests().contains(questId);
+}
+
+Game_System.prototype.isQuestAvailable = function(questId) {
+  return this.getQuestsAvailable().contains(questId);
+};
+
+Game_System.prototype.isQuestCompleted = function(questId) {
+  return this.getQuestsCompleted().contains(questId);
+};
+
+Game_System.prototype.isQuestFailed = function(questId) {
+  return this.getQuestsFailed().contains(questId);
 };
 
 //=============================================================================

@@ -217,7 +217,6 @@ BattleManager.startTurn = function() {
 };
 
 Game_Battler.prototype.forceAction = function(skillId, targetIndex) {
-    //console.log(this._actions);
 	if (this._actions[0] == undefined || this._actions[0]._item._dataClass == ""){
 		this.clearActions();
 	}
@@ -231,7 +230,6 @@ Game_Battler.prototype.forceAction = function(skillId, targetIndex) {
         action.setTarget(targetIndex);
     }
     this._actions.unshift(action);
-	console.log(this._actions);
 };
 
 Game_Battler_initMembers = Game_Battler.prototype.initMembers;
@@ -331,6 +329,19 @@ Game_Enemy.prototype.revive = function() {
 	BattleManager._spriteset._battleField.addChild(BattleManager._spriteset._atbEnemies[this._atbEnemyId]);
 	this.showHUD();
 };
+
+//TODO: DELETE (FOR TEST)
+Game_Battler.prototype.removeState = function(stateId) {
+    if (this.isStateAffected(stateId)) {
+        if (stateId === this.deathStateId()) {
+            this.revive();
+        }
+        this.eraseState(stateId);
+        this.refresh();
+        this._result.pushRemovedState(stateId);
+    }
+};
+//END
 
 Game_Enemy.prototype.appear = function() {
     Game_BattlerBase.prototype.appear.apply(this);
@@ -531,7 +542,7 @@ BattleManager.update = function() {
 		this._subject._states.forEach(function(state){
 			this._subject._stateTurns[state]--;
 			this._logWindow.displayCurrentState(this._subject);
-			if (this._subject._stateTurns[state] <= 0){
+			if (this._subject._stateTurns[state] <= 0 && $dataStates[state].autoRemovalTiming != 0){
 				this._subject.removeState(state);
 				this._logWindow.displayRemovedStates(this._subject);
 			}
