@@ -537,13 +537,21 @@ BattleManager.update = function() {
 		this._isEnemySubject = true;
 		this._actionEnemies.splice(0, 1);
 		this._subject._states.forEach(function(state){
-			this._subject._stateTurns[state]--;
+			// this._subject._stateTurns[state]--;
 			this._logWindow.displayCurrentState(this._subject);
 			if (this._subject._stateTurns[state] <= 0 && $dataStates[state].autoRemovalTiming != 0){
 				this._subject.removeState(state);
 				this._logWindow.displayRemovedStates(this._subject);
 			}
 		}, this)
+		for (buff = 0; buff < this._subject.buffLength(); buff++){
+			this._subject._buffTurns[buff]--;
+			if (this._subject._buffTurns[buff] <= 0){
+				this._subject.removeBuff(buff);
+				this._logWindow.displayBuffs(this._subject, this._subject.result().removedBuffs, TextManager.buffRemove);
+			}
+
+		}
 		this._battlersTurns[this._subject.index() + this._actorsLength][2] = true;
 	}
 };
@@ -611,7 +619,8 @@ BattleManager.processTurn = function() {
 		} else {
 			this._isAction = false;
 			subject.onAllActionsEnd();
-			subject.updateStateTurns();
+			// subject.updateStateTurns();
+			// subject.updateBuffTurns();
 			this.refreshStatus();
 			this._logWindow.displayAutoAffectedStatus(subject);
 			this._logWindow.displayCurrentState(subject);
@@ -640,6 +649,11 @@ BattleManager.endAction = function() {
 	this._logWindow.endAction(this._subject);
 	this._isAction = false;
     this._phase = 'turn';
+	this._subject.updateStateTurns();
+	this._subject.updateBuffTurns();
+	this._subject.removeBuffsAuto();
+	this._subject.removeStatesAuto(1);
+	this._subject.removeStatesAuto(2);
 };
 
 BattleManager_startAction = BattleManager.startAction;
