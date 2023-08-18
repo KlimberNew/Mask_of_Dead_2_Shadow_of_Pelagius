@@ -49,8 +49,10 @@
  * hud_x: id * 230
  * hud_y: Graphics.height - 145
  * 
+ * Слава Україні! :3
+ * 
  */
- ATB = {}
+ATB = {}
  
 ATB.Parameters = PluginManager.parameters('ATB_WIP');
 ATB.Param = {};
@@ -128,6 +130,14 @@ Scene_Battle.prototype.onZoneOk = function(skillId){
 	}
 	this._hitZoneWindow.hide();
 	delete this._hitZoneWindow;
+	BattleManager._playerTurn = false;
+	BattleManager._phase = 'turn'
+	BattleManager._isAction = true;
+	this.selectNextCommand();
+}
+
+Scene_Battle.prototype.commandGuard = function(skillId){
+    BattleManager.inputtingAction().setGuard();
 	BattleManager._playerTurn = false;
 	BattleManager._phase = 'turn'
 	BattleManager._isAction = true;
@@ -329,19 +339,6 @@ Game_Enemy.prototype.revive = function() {
 	BattleManager._spriteset._battleField.addChild(BattleManager._spriteset._atbEnemies[this._atbEnemyId]);
 	this.showHUD();
 };
-
-//TODO: DELETE (FOR TEST)
-Game_Battler.prototype.removeState = function(stateId) {
-    if (this.isStateAffected(stateId)) {
-        if (stateId === this.deathStateId()) {
-            this.revive();
-        }
-        this.eraseState(stateId);
-        this.refresh();
-        this._result.pushRemovedState(stateId);
-    }
-};
-//END
 
 Game_Enemy.prototype.appear = function() {
     Game_BattlerBase.prototype.appear.apply(this);
@@ -551,11 +548,27 @@ BattleManager.update = function() {
 	}
 };
 
-Game_Battler.prototype.onTurnEnd = function() {
+Game_Battler.prototype.onTurnEndOverwrite = function() {
     this.clearResult();
     this.regenerateAll();
 	this.removeStatesAuto(2);
 };
+
+BattleManager.endTurn = function() {
+    this._phase = 'turnEnd';
+    this._preemptive = false;
+    this._surprise = false;
+    this.allBattleMembers().forEach(function(battler) {
+        battler.onTurnEndOverwrite();
+        this.refreshStatus();
+        this._logWindow.displayAutoAffectedStatus(battler);
+        this._logWindow.displayRegeneration(battler);
+    }, this);
+    if (this.isForcedTurn()) {
+        this._turnForced = false;
+    }
+};
+
 
 BattleManager.startB = function() {
     this._phase = "turn";
