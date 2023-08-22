@@ -22,8 +22,8 @@
  *
  * @param atb_x
  * @type eval
- * @desc x of atb gauge (default Graphics.boxWidth - 64)
- * @default Graphics.boxWidth - 64
+ * @desc x of atb gauge (default Graphics.boxWidth - 160)
+ * @default Graphics.boxWidth - 160
  *
  * @param hud_x
  * @type eval
@@ -607,20 +607,23 @@ BattleManager.processTurn = function() {
 			if (action.isValid()) {
 				this.startAction();
 				subject._turnCount++;
+			} else {
+				subject.updateStateTurns();
+				subject.updateBuffTurns();
+				subject.removeBuffsAuto();
+				subject.removeStatesAuto(1);
+				subject.removeStatesAuto(2);
 			}
 			subject.removeCurrentAction();
 			if (subject.isEnemy()){
 				this._battlersTurns[subject.index() + this._actorsLength][2] = false;
 				this._isEnemySubject = false;
 			}
-			//$gameParty.makeActions();
 			$gameTroop.makeActions();
 		this.subject = null
 		} else {
 			this._isAction = false;
 			subject.onAllActionsEnd();
-			// subject.updateStateTurns();
-			// subject.updateBuffTurns();
 			this.refreshStatus();
 			this._logWindow.displayAutoAffectedStatus(subject);
 			this._logWindow.displayCurrentState(subject);
@@ -838,9 +841,10 @@ Sprite_ATBActor.prototype.initialize = function(picture, atbBase, id){
 Sprite_ATBActor.prototype.update = function(){
 	Sprite_Base.prototype.update.call(this);
 	if (this._atbBase != undefined && BattleManager._battlersTurns != undefined){
-		this.x = this._atbBase.x;
+		this.x = this._atbBase.x - 36;
 		if (BattleManager._battlersTurns[this._id][1] == ATB.Param.Base){
-			this.y = 0
+			this.y = 0;
+			this.x = this._atbBase.x + 4;
 		} else {
 			this.y = this._atbBase.height / ATB.Param.Base * (BattleManager._battlersTurns[this._id][1])
 		}
@@ -863,8 +867,14 @@ Sprite_ATBEnemy.prototype.update = function(){
 	Sprite_Base.prototype.update.call(this);
 	if (this._atbBase != undefined && BattleManager._battlersTurns != undefined 
 	&& BattleManager._battlersTurns.length == $gameParty.members().length + $gameTroop.members().length){
-		this.x = this._atbBase.x;
-		this.y = this._atbBase.height / ATB.Param.Base * (BattleManager._battlersTurns[this._id + BattleManager._actorsLength][1])
+		this.x = this._atbBase.x + 50;
+		if (BattleManager._battlersTurns[this._id + BattleManager._actorsLength][1] == ATB.Param.Base){
+			this.y = 0;
+			this.x = this._atbBase.x + 4;
+		} else {
+			this.y = this._atbBase.height / ATB.Param.Base * (BattleManager._battlersTurns[this._id + BattleManager._actorsLength][1])
+		}
+		
 	}
 }
 
@@ -884,12 +894,13 @@ Sprite_ATBMagic.prototype.initialize = function(enemyBase){
 	this._enemyBase = enemyBase;
 	this._id = enemyBase._id
 	this.opacity = 0;
+	this.scale.x *= -1;
 }
 
 Sprite_ATBMagic.prototype.update = function(){
 	Sprite_Base.prototype.update.call(this);
 	this.y = this._enemyBase.y + (this._enemyBase.height - this.height)/2;
-	this.x = this._enemyBase.x - this.width;
+	this.x = this._enemyBase.x + this._enemyBase.width + this.width;
 	if (BattleManager._battlersTurns != undefined
 		&& BattleManager._battlersTurns[this._id + $gameParty.members().length] != undefined &&
 		BattleManager._battlersTurns[this._id + $gameParty.members().length][0]._actions[0] != undefined) {
