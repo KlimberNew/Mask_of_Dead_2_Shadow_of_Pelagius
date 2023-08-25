@@ -56,3 +56,15 @@ function tev(e=0){
     if (e==0) e=$gameMap._interpreter._eventId
 	return $gameMap.event(e)
 }
+
+function is_enemy(e){
+	var t=$gameMap.eventIdXy(e.x,e.y), id=e._eventId, d
+	if (t)
+		var mt=tev(t).event().meta
+		if (mt.en) {
+			if (e.event().meta.exp) gVs(17,1)
+			else if (e.event().meta.mag) gVs(17,2)
+			sSs(t) 
+			sSs(id,3)
+		}
+}

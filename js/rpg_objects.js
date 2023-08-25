@@ -8779,6 +8779,9 @@ Game_Interpreter.prototype.initialize = function(depth) {
     this._freezeChecker = 0;
 };
 
+/*
+
+*/
 Game_Interpreter.prototype.checkOverflow = function() {
     if (this._depth >= 100) {
         throw new Error('Common event calls exceeded the limit');
