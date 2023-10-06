@@ -13,17 +13,19 @@
  * 
  * StopBattle - зупинити битви
  * 
- * BattleDirector ally 450 50 40 A - подія-союзни_ця зі:
+ * BattleDirector ally 450 50 40 1 A - подія-союзни_ця зі:
  * * здоров'ям 450 
  * * атакою 50 
  * * захистом 40 
+ * * анімацією атаки 1
  * * локальним перемикачем A після поразки
  * 
  * 
- * BattleDirector enemy 450 50 40 A - подія-противни_ця зі:
+ * BattleDirector enemy 450 50 40 1 A - подія-противни_ця зі:
  * * здоров'ям 450 
  * * атакою 50 
  * * захистом 40 
+ * * анімацією атаки 1
  * * локальним перемикачем A після поразки
  * 
  * Скрипти
@@ -40,7 +42,7 @@
  * battleDirectorEventHPRate(0) - співвідношення HP і MHP цієї події
  */
 
-///TODO: test with old saves
+///TODO: Адаптувати під різну тривалість анімацій
 
 
 //===== Plugin command =====
@@ -81,7 +83,11 @@ function BattleDirector_setAllyOrEnemy(event, params){
     if (!def){
         throw new Error("Defense has to be an integer! (" + params +")");
     }
-    letter = params[5].toUpperCase();
+    anim = parseInt(params[5]);
+    if (!anim){
+        throw new Error("Animation has to be an integer! (" + params +")");
+    }
+    letter = params[6].toUpperCase();
     if (!selfSwitchLetters.contains(letter)){
         throw new Error("Self switch has to be a letter A, B, C, or D! (" + params +")");
     }
@@ -90,6 +96,8 @@ function BattleDirector_setAllyOrEnemy(event, params){
     event._battleDirectorHP = hp;
     event._battleDirectorATK = atk;
     event._battleDirectorDEF = def;
+    event._battleDirectorDefaultAnimation = anim;
+    event._battleDirectorAnimation = anim;
     event._battleDirectorSelfSwitch = letter;
     event._battleDirectorDefeated = false;
 }
@@ -173,17 +181,23 @@ Game_Event.prototype.battleDirectorIsDifferentType = function(event){
 //Перевірка, чи є хтось попереду + обробка атаки (ім'я щось не дуже, бо здається, наче тільки перевіряє)
 Game_Event.prototype.battleManagerCheckBattler = function(x, y) {
     $gameMap.eventsXy(x, y).forEach(function(event) {
-        if (this.battleDirectorIsDifferentType(event) && !event.battleDirectorIsDefeated() && !this.battleDirectorIsDefeated() && !this.isAnimationPlaying()) {
-            this._battleDirectorHP -= event._battleDirectorATK / this._battleDirectorDEF;
-            this.requestAnimation(1);
-            if (this._battleDirectorHP <= 0){
-                this._battleDirectorDefeated = true;
-                var key = [this._mapId, this._eventId, this._battleDirectorSelfSwitch];
-                $gameSelfSwitches.setValue(key, true);
-            }
+        if (this.battleDirectorIsDifferentType(event) && !event.battleDirectorIsDefeated() && !this.battleDirectorIsDefeated() && !this.isAnimationPlaying() && !event.isAnimationPlaying()) {
+            battleDirectorProcessAttack(event, this);
+            battleDirectorProcessAttack(this, event);
         }
     }, this);
 };
+
+//Функція виклику атаки
+function battleDirectorProcessAttack(attacker, target){
+    target._battleDirectorHP -= attacker._battleDirectorATK / target._battleDirectorDEF;
+    target.requestAnimation(attacker._battleDirectorAnimation);
+    if (target._battleDirectorHP <= 0){
+        target._battleDirectorDefeated = true;
+        var key = [target._mapId, target._eventId, target._battleDirectorSelfSwitch];
+        $gameSelfSwitches.setValue(key, true);
+    }
+}
 
 //===== Functions to check if all (from side) is dead =====
 function AllEnemiesDead(){
@@ -232,5 +246,13 @@ function battleDirectorEventHPRate(eventId){
     if (eventId == 0){
         eventId = $gameMap._interpreter._eventId;
     }
-    return $gameMap.event(eventId)._battleDirectorMHP / $gameMap.event(eventId)._battleDirectorMHP;
+    return $gameMap.event(eventId)._battleDirectorHP / $gameMap.event(eventId)._battleDirectorMHP;
+}
+
+function changeAnimation(idEv, idAnim){
+    if (idAnim == undefined){
+        $gameMap.event(idEv)._battleDirectorAnimation = $gameMap.event(idEv)._battleDirectorDefaultAnimation;
+    } else {
+        $gameMap.event(idEv)._battleDirectorAnimation = idAnim;
+    }
 }
