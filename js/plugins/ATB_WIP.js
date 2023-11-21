@@ -52,6 +52,8 @@
  * Слава Україні! :3
  * 
  */
+
+
 ATB = {}
  
 ATB.Parameters = PluginManager.parameters('ATB_WIP');
@@ -95,10 +97,6 @@ Window_HitZone.prototype.makeCommandList = function(){
 }
 
 //Hit zone in scene
-Scene_Battle_createAllWindows = Scene_Battle.prototype.createAllWindows;
-Scene_Battle.prototype.createAllWindows = function() {
-	Scene_Battle_createAllWindows.apply(this);
-};
 
 Scene_Battle.prototype.createHitZoneWindow = function(){
 	this._hitZoneWindow = new Window_HitZone();
@@ -109,10 +107,8 @@ Scene_Battle.prototype.createHitZoneWindow = function(){
 	this._hitZoneWindow.setHandler('cancel', this.onZoneCancel.bind(this));
 	this._hitZoneWindow.deselect();
 	this._hitZoneWindow.width = 180;
-	enemyIndex = BattleManager.inputtingAction()._targetIndex;
-	enemySprites = BattleManager._spriteset._enemySprites;
-	enemySprite = enemySprites[enemySprites.length - enemyIndex - 1];
-	this._hitZoneWindow.x = Math.max(0, enemySprite.x - this._hitZoneWindow.width / 2);
+	let enemyIndex = BattleManager.inputtingAction()._targetIndex;
+	this._hitZoneWindow.x = Math.max(0, $gameTroop.members()[enemyIndex]._screenX - this._hitZoneWindow.width / 2);
 	this.addWindow(this._hitZoneWindow);
 }
 
@@ -121,6 +117,7 @@ Scene_Battle.prototype.onZoneCancel = function(){
 	delete this._hitZoneWindow;
 	this._enemyWindow.show();
 	this._enemyWindow.activate();
+	//actor continues input
 	BattleManager._phase = "input"
 }
 
@@ -130,17 +127,12 @@ Scene_Battle.prototype.onZoneOk = function(skillId){
 	}
 	this._hitZoneWindow.hide();
 	delete this._hitZoneWindow;
-	BattleManager._playerTurn = false;
-	BattleManager._phase = 'turn'
-	BattleManager._isAction = true;
+	//turn starts
 	this.selectNextCommand();
 }
 
 Scene_Battle.prototype.commandGuard = function(skillId){
     BattleManager.inputtingAction().setGuard();
-	BattleManager._playerTurn = false;
-	BattleManager._phase = 'turn'
-	BattleManager._isAction = true;
 	this.selectNextCommand();
 }
 
@@ -150,9 +142,6 @@ Scene_Battle.prototype.onActorOk = function() {
     this._actorWindow.hide();
     this._skillWindow.hide();
 	this._itemWindow.hide();
-	BattleManager._playerTurn = false;
-	BattleManager._phase = 'turn'
-	BattleManager._isAction = true;
     this.selectNextCommand();
 };
 
@@ -163,14 +152,12 @@ Scene_Battle.prototype.onEnemyOk = function() {
     this._skillWindow.hide();
     this._itemWindow.hide();
 	if (action.isAttack()){
-		BattleManager._phase = "hitzone"
+		//when phase hitzone, no actor action selection for some reason
+		BattleManager._phase = "hitzone" 
 		this.createHitZoneWindow();
 		this._hitZoneWindow.show();
 		this._hitZoneWindow.select(0);
 	} else{
-		BattleManager._playerTurn = false;
-		BattleManager._phase = 'turn'
-		BattleManager._isAction = true;
 		this.selectNextCommand();
 	}
 };
@@ -198,27 +185,20 @@ Scene_Battle.prototype.onEnemyCancel = function() {
 
 //atb_dur = 100 / agi
 
+ATB.BattleManager_setup = BattleManager.setup;
 BattleManager.setup = function(troopId, canEscape, canLose) {
-    this.initMembers();
-    this._canEscape = canEscape;
-    this._canLose = canLose;
-    $gameTroop.setup(troopId);
-    $gameScreen.onBattleStart();
-    this.makeEscapeRatio();
-	this._actionEnemies = [];
+	ATB.BattleManager_setup.call(this, troopId, canEscape, canLose);
+	this._actionEnemies = []; //enemies which will act?
 	this._playerTurn = false;
 	this._isAction = false;
 };
+
 BattleManager.startTurn = function() {
 	if (this._subject != null && this._subject.isEnemy()){
-		this._actionEnemies.push(this._subject);
+		this._actionEnemies.push(this._subject); //add current active enemy to order
 	}
 	this._subject = $gameParty.members()[this._activeActor];
     this._phase = 'turn';
-    //this.clearActor();
-	/*if (this._activeActor == 0){
-    	$gameTroop.increaseTurn();
-	}*/
     this.makeActionOrders();
     $gameParty.requestMotionRefresh();
     this._logWindow.startTurn();
@@ -227,7 +207,7 @@ BattleManager.startTurn = function() {
 };
 
 Game_Battler.prototype.forceAction = function(skillId, targetIndex) {
-	if (this._actions[0] == undefined || this._actions[0]._item._dataClass == ""){
+	if (this._actions[0] == undefined || this._actions[0]._item._dataClass == ""){ // if no actions clear actions
 		this.clearActions();
 	}
     var action = new Game_Action(this, true);
@@ -242,14 +222,14 @@ Game_Battler.prototype.forceAction = function(skillId, targetIndex) {
     this._actions.unshift(action);
 };
 
-Game_Battler_initMembers = Game_Battler.prototype.initMembers;
+ATB.Game_Battler_initMembers = Game_Battler.prototype.initMembers;
 Game_Battler.prototype.initMembers = function() {
-    Game_Battler_initMembers.apply(this);
+    ATB.Game_Battler_initMembers.apply(this);
 	this._turnCount = 0;
 };
 
 Game_Enemy.prototype.meetsTurnCondition = function(param1, param2) {
-    var n = this._turnCount;
+    var n = this._turnCount; //enemy's turn count instead of general turn count
     if (param2 === 0) {
         return n === param1;
     } else {
@@ -258,15 +238,17 @@ Game_Enemy.prototype.meetsTurnCondition = function(param1, param2) {
 };
 
 Game_Battler.prototype.makeActions = function() {
+	//same, but no check if can move
     this.clearActions();
-        var actionTimes = this.makeActionTimes();
-        this._actions = [];
-        for (var i = 0; i < actionTimes; i++) {
-            this._actions.push(new Game_Action(this));
-        }
+	var actionTimes = this.makeActionTimes();
+	this._actions = [];
+	for (var i = 0; i < actionTimes; i++) {
+		this._actions.push(new Game_Action(this));
+	}
 };
 
 Game_Enemy.prototype.makeActions = function() {
+	//same, but check if no actions and no waiting state
 	if (this._actions.length == 0){
 		Game_Battler.prototype.makeActions.call(this);
 		if (this.numActions() > 0) {
@@ -280,23 +262,10 @@ Game_Enemy.prototype.makeActions = function() {
 	}
 }
 
-Scene_Battle.prototype.onSelectAction = function() {
-    var action = BattleManager.inputtingAction();
-    this._skillWindow.hide();
-    this._itemWindow.hide();
-    if (!action.needsSelection()) {
-		BattleManager._playerTurn = false;
-		BattleManager._phase = 'turn'
-		BattleManager._isAction = true;
-		this.selectNextCommand();
-    } else if (action.isForOpponent()) {
-        this.selectEnemySelection();
-    } else {
-        this.selectActorSelection();
-    }
-};
-
 BattleManager.selectNextCommand = function() {
+	this._playerTurn = false;
+	this._phase = 'turn'
+	this._isAction = true;
     do {
         if (!this.actor() || !this.actor().selectNextCommand()) {
 			if (this._actorIndex < 0){
@@ -305,7 +274,7 @@ BattleManager.selectNextCommand = function() {
 				this.subject = $gameParty.members()[this._actorIndex]
 				this.changeActor(this._actorIndex + this._actorsLength, 'waiting');
 			}
-            if (this._actorIndex >= $gameParty.size()) {
+            if (this._actorIndex >= $gameParty.size()) {//same as original
                 this.startTurn();
                 break;
             }
@@ -313,9 +282,9 @@ BattleManager.selectNextCommand = function() {
     } while (!this.actor().canInput());
 };
 
-Game_Enemy_setup = Game_Enemy.prototype.setup
+ATB.Game_Enemy_setup = Game_Enemy.prototype.setup
 Game_Enemy.prototype.setup = function(enemyId, x, y) {
-    Game_Enemy_setup.apply(this, arguments)
+    ATB.Game_Enemy_setup.apply(this, arguments)
 	this._atbEnemyId = '';
 };
 
@@ -323,15 +292,25 @@ Game_Enemy.prototype.setAtbEnemy = function(atbEnemyId){
 	this._atbEnemyId = atbEnemyId;
 }
 
-Game_Enemy.prototype.gainHp = function(value){
-	Game_Battler.prototype.gainHp.call(this, value);
-}
-Game_Enemy_performCollapse = Game_Enemy.prototype.performCollapse
+ATB.Game_Enemy_performCollapse = Game_Enemy.prototype.performCollapse
 Game_Enemy.prototype.performCollapse = function() {
 	spriteset = BattleManager._spriteset
 	spriteset.deleteInfo(this._atbEnemyId, spriteset._atbEnemies, 0)
 	this.hideHUD();
-    Game_Enemy_performCollapse.apply(this)
+	BattleManager._battlersTurns[this._atbEnemyId + BattleManager._actorsLength][3] = false;
+    ATB.Game_Enemy_performCollapse.apply(this)
+};
+
+ATB.Game_Enemy_onRestrict = Game_Enemy.prototype.onRestrict;
+Game_Enemy.prototype.onRestrict = function() {
+    ATB.Game_Enemy_onRestrict.call(this);
+	BattleManager._battlersTurns[this._atbEnemyId + BattleManager._actorsLength][3] = false;
+};
+
+ATB.Game_Actor_onRestrict = Game_Actor.prototype.onRestrict;
+Game_Actor.prototype.onRestrict = function() {
+    ATB.Game_Actor_onRestrict.call(this);
+	BattleManager._battlersTurns[this._atbActorId][3] = false;
 };
 
 Game_Enemy.prototype.revive = function() {
@@ -364,9 +343,9 @@ Game_Enemy.prototype.hideHUD = function(){
 	}
 }
 
-Game_Actor_setup = Game_Actor.prototype.setup
+ATB.Game_Actor_setup = Game_Actor.prototype.setup
 Game_Actor.prototype.setup = function(actorId) {
-    Game_Actor_setup.apply(this, arguments)
+    ATB.Game_Actor_setup.apply(this, arguments)
 	this._atbActorId = '';
 };
 
@@ -374,13 +353,14 @@ Game_Actor.prototype.setAtbActor = function(atbActorId){
 	this._atbActorId = atbActorId;
 }
 
-Game_Actor_performCollapse = Game_Actor.prototype.performCollapse
+ATB.Game_Actor_performCollapse = Game_Actor.prototype.performCollapse
 Game_Actor.prototype.performCollapse = function() {
 	if (SceneManager._scene == Scene_Battle){
 		spriteset = BattleManager._spriteset
 		spriteset.deleteInfo(this._atbActorId, spriteset._atbActors, 0)
 	}
-    Game_Actor_performCollapse.apply(this)
+	BattleManager._battlersTurns[this._atbActorId][3] = false;
+    ATB.Game_Actor_performCollapse.apply(this)
 };
 
 Game_Actor.prototype.revive = function() {
@@ -388,21 +368,10 @@ Game_Actor.prototype.revive = function() {
 	BattleManager._spriteset._battleField.addChild(BattleManager._spriteset._atbActors[this._atbActorId]);
 };
 
-Scene_Battle_terminate = Scene_Battle.prototype.terminate;
+ATB.Scene_Battle_terminate = Scene_Battle.prototype.terminate;
 Scene_Battle.prototype.terminate = function() {
-    Scene_Battle_terminate.call(this);
+    ATB.Scene_Battle_terminate.call(this);
 	BattleManager._battlersTurns = undefined;
-};
-
-BattleManager_processVictory = BattleManager.processVictory;
-BattleManager.processVictory = function() {
-    BattleManager_processVictory.apply(this)
-};
-
-BattleManager.processAbort = function() {
-    $gameParty.removeBattleStates();
-    this.replayBgmAndBgs();
-    this.endBattle(1);
 };
 
 BattleManager.processEscape = function() {
@@ -421,6 +390,7 @@ BattleManager.processEscape = function() {
 		$gameParty.clearActions();
 		this._battlersTurns[this._activeActor][1] = ATB.Param.Base;
 		this._battlersTurns[this._activeActor][2] = false;
+		this._battlersTurns[this._activeActor][3] = false;
     }
     return success;
 };
@@ -432,12 +402,12 @@ BattleManager.updateEscape = function(){
 }
 
 BattleManager.makeActionOrders = function() {
-    this._actionBattlers = $gameParty.members(); //this._actionBattlers = [$gameParty.members()[0]]
+    this._actionBattlers = $gameParty.members();
 };
 
-BattleManager_startBattle = BattleManager.startBattle;
+ATB.BattleManager_startBattle = BattleManager.startBattle;
 BattleManager.startBattle = function() {
-    BattleManager_startBattle.apply(this);
+    ATB.BattleManager_startBattle.apply(this);
 	this._battlersTurns = [];
 	battlers = [];
 	battlers = battlers.concat($gameParty.members());
@@ -479,7 +449,7 @@ Window_BattleLog.prototype.addText = function(text) {
 
 //
 
-BattleManager_update = BattleManager.update;
+//ATB.BattleManager_update = BattleManager.update;
 BattleManager.update = function() {
     if (!this.isBusy() && !this.updateEvent()) {
         switch (this._phase) {
@@ -504,8 +474,12 @@ BattleManager.update = function() {
 		}
     }
 	for (i = 0; i < this._battlersTurns.length; i++){
-		if (!(this._playerTurn && i < this._actorsLength) && this._phase == 'turn' && !this._isAction){
-			this._battlersTurns[i][1] = this._battlersTurns[i][1] - this._battlersTurns[i][0].agi / ATB.Param.Divider;
+		if (!(this._playerTurn && i < this._actorsLength) && this._phase == 'turn' && !this._isAction && !this._isEnemySubject){
+			if (!this._battlersTurns[i][3]){
+				this._battlersTurns[i][1] = this._battlersTurns[i][1] - this._battlersTurns[i][0].agi / ATB.Param.Divider;
+			} else {
+				this._battlersTurns[i][1] = this._battlersTurns[i][1] - ATB.Param.Base / this._battlersTurns[i][0].currentAction().item().speed / ATB.Param.Divider;
+			}
 			if (this._battlersTurns[i][1] <= 0){
 				this._battlersTurns[i][2] = true;
 				this._battlersTurns[i][1] = ATB.Param.Base;
@@ -537,7 +511,6 @@ BattleManager.update = function() {
 		this._isEnemySubject = true;
 		this._actionEnemies.splice(0, 1);
 		this._subject._states.forEach(function(state){
-			// this._subject._stateTurns[state]--;
 			this._logWindow.displayCurrentState(this._subject);
 			if (this._subject._stateTurns[state] <= 0 && $dataStates[state].autoRemovalTiming != 0){
 				this._subject.removeState(state);
@@ -555,6 +528,7 @@ BattleManager.update = function() {
 		this._battlersTurns[this._subject.index() + this._actorsLength][2] = true;
 	}
 };
+
 
 Game_Battler.prototype.onTurnEndOverwrite = function() {
     this.clearResult();
@@ -580,21 +554,6 @@ BattleManager.endTurn = function() {
 
 BattleManager.startB = function() {
     this._phase = "turn";
-	//this.startTurn();
-};
-
-BattleManager.invokeAction = function(subject, target) {
-    this._logWindow.push('pushBaseLine');
-    if (Math.random() < this._action.itemCnt(target)) {
-        this.invokeCounterAttack(subject, target);
-    } else if (Math.random() < this._action.itemMrf(target)) {
-        this.invokeMagicReflection(subject, target);
-    } else {
-        this.invokeNormalAction(subject, target);
-    }
-    subject.setLastTarget(target);
-    this._logWindow.push('popBaseLine');
-	this.refreshStatus();
 };
 
 BattleManager.processTurn = function() {
@@ -603,18 +562,45 @@ BattleManager.processTurn = function() {
 	subject.isActor() && this._battlersTurns[subject.index()][2]){
 		var action = subject.currentAction();
 		if (action) {
-			action.prepare();
 			if (action.isValid()) {
-				this.startAction();
-				subject._turnCount++;
+				if ((subject.isActor() && this._battlersTurns[subject.index()][3]) ||
+				(subject.isEnemy() && this._battlersTurns[subject.index() + this._actorsLength][3])){
+					if (subject.isEnemy() && this._battlersTurns[subject.index() + this._actorsLength][3]){
+						
+						this.startAction();
+						subject._turnCount++;
+						subject.removeCurrentAction();
+						this._battlersTurns[subject.index() + this._actorsLength][2] = false;
+						this._battlersTurns[subject.index() + this._actorsLength][3] = false;
+						this._battlersTurns[subject.index() + this._actorsLength][1] = ATB.Param.Base;
+					}
+				} else {
+					var speed = action.item().speed;
+					if (speed <= 0){
+						this.startAction();
+						subject._turnCount++;
+						subject.removeCurrentAction();
+					} else {
+						if (subject.isActor()){
+							this._battlersTurns[subject.index()][3] = true;
+							this._battlersTurns[subject.index()][2] = false;
+						} else {
+							this._battlersTurns[subject.index() + this._actorsLength][3] = true;
+							this._battlersTurns[subject.index() + this._actorsLength][2] = false;
+						}
+						this._phase = 'turn';
+						this._subject = null;
+						this._isAction = null;
+					}
+				}
 			} else {
 				subject.updateStateTurns();
 				subject.updateBuffTurns();
 				subject.removeBuffsAuto();
 				subject.removeStatesAuto(1);
 				subject.removeStatesAuto(2);
+				subject.removeCurrentAction();
 			}
-			subject.removeCurrentAction();
 			if (subject.isEnemy()){
 				this._battlersTurns[subject.index() + this._actorsLength][2] = false;
 				this._isEnemySubject = false;
@@ -629,6 +615,7 @@ BattleManager.processTurn = function() {
 			this._logWindow.displayCurrentState(subject);
 			this._logWindow.displayRegeneration(subject);
 			this._subject = this.getNextSubject();
+			this._isEnemySubject = false;
 		}
 	}
 
@@ -659,21 +646,48 @@ BattleManager.endAction = function() {
 	this._subject.removeStatesAuto(2);
 };
 
-BattleManager_startAction = BattleManager.startAction;
+ATB.BattleManager_startAction = BattleManager.startAction;
 BattleManager.startAction = function() {
 	subject = this._subject;
-    BattleManager_startAction.apply(this);
+    ATB.BattleManager_startAction.apply(this);
 };
 
 BattleManager.updateTurnEnd = function() {
-    this.startInput();
+    if (!this._subject) {
+        this._subject = this.getNextSubject();
+		if (!this._subject){
+			this.startInput();
+			return;
+		}
+    }
+	if (!this._battlersTurns[this._subject.index()][3]){
+		this.startInput();
+	} else {
+		this.startAction();
+		this._subject._turnCount++;
+        this._subject.removeCurrentAction();
+		this._battlersTurns[this._subject.index()][2] = false;
+		this._battlersTurns[this._subject.index()][3] = false;
+		this._battlersTurns[this._subject.index()][1] = ATB.Param.Base;
+		this._playerTurn = false;
+	}
+};
+
+BattleManager.startInput = function() {
+    this._phase = 'input';
+	this._subject = $gameParty.members()[this._activeActor];
+	this._subject.makeActions();
+    $gameTroop.makeActions();
+    this.clearActor();
+    if (this._surprise || !$gameParty.canInput()) {
+        this.startTurn();
+    }
 };
 
 BattleManager.updateEvent = function() {
 
     if (this.isActionForced() && !(this._phase === 'battleEnd') ) {
         this.processForcedAction();
-        //return true;
     } else if (!(this._phase === 'battleEnd')){
         return this.updateEventMain();
     }
@@ -709,7 +723,6 @@ Scene_Battle.prototype.changeInputWindow = function() {
 			if ($gameParty.members()[BattleManager._activeActor].canInput()){
 				BattleManager.changeActor(BattleManager._activeActor, 'undecided');
 				this.startActorCommandSelection();
-				//this.startPartyCommandSelection();
 			} else {
 				BattleManager.startTurn();
 			}
@@ -721,9 +734,9 @@ Scene_Battle.prototype.changeInputWindow = function() {
 
 ///===ATB_Gauge===///
 
-Spriteset_Battle_createLowerLayer = Spriteset_Battle.prototype.createLowerLayer;
+ATB.Spriteset_Battle_createLowerLayer = Spriteset_Battle.prototype.createLowerLayer;
 Spriteset_Battle.prototype.createLowerLayer = function() {
-    Spriteset_Battle_createLowerLayer.call(this);
+    ATB.Spriteset_Battle_createLowerLayer.call(this);
 	this._hpBases = [];
 	this._hpGauges = [];
 	this._mpGauges = [];
@@ -1228,9 +1241,9 @@ Sprite_HUDEnemy.prototype.initialize = function(id){
 	Sprite_Base.prototype.initialize.call(this);
 	this._id = id;
 	if (this.isBoss()){
-		name = "WIP_HP_Boss_Bar"
+		var name = "WIP_HP_Boss_Bar"
 	} else {
-		name = "WIP_HP_Enemy_Bar"
+		var name = "WIP_HP_Enemy_Bar"
 	}
 	this.bitmap = ImageManager.loadSystem(name)
 }
@@ -1262,9 +1275,9 @@ Sprite_HUDEnemyAnim.prototype.initialize = function(id, base){
 	this._base = base
 	this._id = id;
 	if (this.isBoss()){
-		name = "WIP_HP_Boss_Bar_Animation"
+		var name = "WIP_HP_Boss_Bar_Animation"
 	} else {
-		name = "WIP_HP_Enemy_Bar_Anim"
+		var name = "WIP_HP_Enemy_Bar_Anim"
 	}
 	this.bitmap = ImageManager.loadSystem(name)
 	this._sprite = null
@@ -1481,9 +1494,9 @@ BattleManager.selectPreviousCommand = function() {
     } while (true);
 };
 
-Scene_Battle_createDisplayObjects = Scene_Battle.prototype.createDisplayObjects;
+ATB.Scene_Battle_createDisplayObjects = Scene_Battle.prototype.createDisplayObjects;
 Scene_Battle.prototype.createDisplayObjects = function() {
-    Scene_Battle_createDisplayObjects.call(this);
+    ATB.Scene_Battle_createDisplayObjects.call(this);
 	this._actorCommandWindow.x = 600 - this._actorCommandWindow.width / 2;
 	this._actorCommandWindow.y = 280 - 64 - this._actorCommandWindow.height;
 	this._partyCommandWindow.x = 600 - this._partyCommandWindow.width / 2;
@@ -1500,9 +1513,6 @@ BattleManager.updateTurn = function() {
     }
 	if (this._playerTurn) {
 		this.endTurn();
-		if (!BattleManager.checkBattleEnd){
-			this.startInput();
-		}
     }
 };
 
