@@ -35,6 +35,12 @@
  * @desc y of hud (default Graphics.height - (2 - Math.floor(id / 2)) * 125 - 20)
  * @default Graphics.height - (2 - Math.floor(id / 2)) * 125 - 20
  * 
+ * @param charge_animation
+ * @text Charge Animation
+ * @type animation
+ * @desc default animation when battler is preparing an attack
+ * @default 122
+ * 
  * @help
  * Skill 3 - Head
  * Skill 4 - Torso
@@ -53,7 +59,6 @@
  * 
  */
 
-
 ATB = {}
  
 ATB.Parameters = PluginManager.parameters('ATB_WIP');
@@ -66,6 +71,9 @@ ATB.Param.AtbX = ATB.Parameters['atb_x'] || Graphics.boxWidth - 64
 
 ATB.Param.HudX = ATB.Parameters['hud_x'] || "Graphics.width - (2 - id % 2 ) * 250" 
 ATB.Param.HudY = ATB.Parameters['hud_y'] || "Graphics.height - (2 - Math.floor(id / 2)) * 125 - 20"
+
+
+ATB.Param.ChargeAnimation = ATB.Parameters['charge_animation'] || 122
 
  
 function doPathExist(path_to_file){
@@ -226,6 +234,8 @@ ATB.Game_Battler_initMembers = Game_Battler.prototype.initMembers;
 Game_Battler.prototype.initMembers = function() {
     ATB.Game_Battler_initMembers.apply(this);
 	this._turnCount = 0;
+	this._chargeAnimations = [];
+	this._chargeAnimationsStop = false;
 };
 
 Game_Enemy.prototype.meetsTurnCondition = function(param1, param2) {
@@ -445,10 +455,6 @@ BattleManager.displayEscapeFailureMessage = function() {
 Window_BattleLog.prototype.addText = function(text) {
 };
 
-
-
-//
-
 //ATB.BattleManager_update = BattleManager.update;
 BattleManager.update = function() {
     if (!this.isBusy() && !this.updateEvent()) {
@@ -479,8 +485,20 @@ BattleManager.update = function() {
 				this._battlersTurns[i][1] = this._battlersTurns[i][1] - this._battlersTurns[i][0].agi / ATB.Param.Divider;
 			} else {
 				this._battlersTurns[i][1] = this._battlersTurns[i][1] - ATB.Param.Base / this._battlersTurns[i][0].currentAction().item().speed / ATB.Param.Divider;
+				if (!(i < this._actorsLength && this.isActorAnimationPlaying(i)) && !(i >= this._actorsLength && this.isEnemyAnimationPlaying(i - this._actorsLength)) && !this._spriteset.isBusy()){
+					this._battlersTurns[i][0].clearAnimations();
+					if (this._battlersTurns[i][0].currentAction().item().meta["Charge Animation"]){
+						let animationId = this._battlersTurns[i][0].currentAction().item().meta["Charge Animation"].replace(/ /g, '');
+						this._battlersTurns[i][0].startChargeAnimation(animationId, false, 0);
+					} else {
+						this._battlersTurns[i][0].startChargeAnimation(ATB.Param.ChargeAnimation, false, 0);
+					}
+				}
 			}
 			if (this._battlersTurns[i][1] <= 0){
+				for (j in this._battlersTurns){
+					this._battlersTurns[j][0].stopChargeAnimation();
+				}
 				this._battlersTurns[i][2] = true;
 				this._battlersTurns[i][1] = ATB.Param.Base;
 				if (this._battlersTurns[i][0] == this._slowestBattler){
@@ -528,6 +546,14 @@ BattleManager.update = function() {
 		this._battlersTurns[this._subject.index() + this._actorsLength][2] = true;
 	}
 };
+
+BattleManager.isActorAnimationPlaying = function(actor){
+	return this._spriteset._actorSprites[actor].isAnimationPlaying() || $gameParty.members()[actor].isAnimationRequested();
+}
+
+BattleManager.isEnemyAnimationPlaying = function(enemy){
+	return this._spriteset._enemySprites[enemy].isAnimationPlaying() || $gameTroop.members()[enemy].isAnimationRequested();
+}
 
 
 Game_Battler.prototype.onTurnEndOverwrite = function() {
@@ -638,7 +664,11 @@ BattleManager.refreshIcons = function(){
 BattleManager.endAction = function() {
 	this._logWindow.endAction(this._subject);
 	this._isAction = false;
-    this._phase = 'turn';
+	if (this._playerTurn){
+		BattleManager.startInput();
+	} else {
+    	this._phase = 'turn';
+	}
 	this._subject.updateStateTurns();
 	this._subject.updateBuffTurns();
 	this._subject.removeBuffsAuto();
@@ -685,8 +715,7 @@ BattleManager.startInput = function() {
 };
 
 BattleManager.updateEvent = function() {
-
-    if (this.isActionForced() && !(this._phase === 'battleEnd') ) {
+    if (this.isActionForced() && !(this._phase === 'battleEnd')) {
         this.processForcedAction();
     } else if (!(this._phase === 'battleEnd')){
         return this.updateEventMain();
@@ -1524,4 +1553,80 @@ BattleManager.getNextSubject = function() {
 		}
 	})
 	return null;
+};
+
+// Sprite_Animation but charging
+
+Game_Battler.prototype.startChargeAnimation = function(animationId, mirror, delay) {
+    var data = { animationId: animationId, mirror: mirror, delay: delay };
+	if (this._chargeAnimations){
+		this._chargeAnimations.push(data);
+	} else {
+		this._chargeAnimations = [data];
+	}
+};
+
+Game_Battler.prototype.stopChargeAnimation = function() {
+    this._chargeAnimationsStop = true;
+};
+
+Game_Battler.prototype.isChargeAnimationRequested = function() {
+    return this._chargeAnimations ? this._chargeAnimations.length > 0 : false;
+};
+
+Game_Battler.prototype.isChargeAnimationStopped = function() {
+    return this._chargeAnimationsStop;
+};
+
+ATB.Sprite_Battler_prototype_updateAnimation = Sprite_Battler.prototype.updateAnimation;
+Sprite_Battler.prototype.updateAnimation = function() {
+    ATB.Sprite_Battler_prototype_updateAnimation.apply(this);
+	this.setupChargeAnimation();
+	if (this._battler.isChargeAnimationStopped()){
+		this.stopChargeAnimation();
+	}
+};
+
+Sprite_Battler.prototype.setupChargeAnimation = function() {
+    while (this._battler.isChargeAnimationRequested()) {
+        var data = this._battler._chargeAnimations.shift();
+        var animation = $dataAnimations[data.animationId];
+        var mirror = data.mirror;
+        var delay = animation.position === 3 ? 0 : data.delay;
+        this.startChargeAnimation(animation, mirror, delay);
+        for (var i = 0; i < this._animationSprites.length; i++) {
+            var sprite = this._animationSprites[i];
+            sprite.visible = this._battler.isSpriteVisible();
+        }
+    }
+};
+
+Sprite_Battler.prototype.startChargeAnimation = function(animation, mirror, delay) {
+    var sprite = new Sprite_ChargeAnimation();
+    sprite.setup(this._effectTarget, animation, mirror, delay);
+    this.parent.addChild(sprite);
+    this._animationSprites.push(sprite);
+};
+
+Sprite_Battler.prototype.stopChargeAnimation = function() {
+	this._battler._chargeAnimationsStop = false;
+    var sprites = this._animationSprites.clone();
+    this._animationSprites = [];
+	for (var i = 0; i < sprites.length; i++) {
+		sprites[i].remove();
+	}
+};
+
+function Sprite_ChargeAnimation() {
+    this.initialize.apply(this, arguments);
+}
+
+Sprite_ChargeAnimation.prototype = Object.create(Sprite_Animation.prototype);
+Sprite_ChargeAnimation.prototype.constructor = Sprite_Animation;
+
+Sprite_ChargeAnimation.prototype.updateFrame = function() {
+	Sprite_Animation.prototype.updateFrame.apply(this);
+    if (this._duration == 0) {
+		this.setupDuration();
+    }
 };
