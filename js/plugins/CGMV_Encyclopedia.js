@@ -4,12 +4,12 @@
  * @help
  * ===========================================================================
  * For terms and conditions using this plugin in your game please visit:
- * http://caspergaming.com/dev/terms_of_use/
+ * https://www.caspergaming.com/terms-of-use/
  * ===========================================================================
  * Become a Patron to get a demo for this plugin as well as beta plugins
  * https://www.patreon.com/CasperGamingRPGM
  * ===========================================================================
- * Version: 1.7
+ * Version: 1.8
  * ---------------------------------------------------------------------------
  * Compatibility: Only tested with my CGMV plugins.
  * Made for RPG Maker MV 1.6.1
@@ -76,6 +76,10 @@
  *
  * 1.7:
  * - Fixed bug with Discover plugin command not working.
+ *
+ * 1.8:
+ * - Fixed weird display when currency unit began with a space
+ * - Fixed bug with description beginning new line too early when description contained newline character
  *
  * @param Category Options
  * 
@@ -531,7 +535,7 @@ var Imported = Imported || {};
 Imported.CGMV_Encyclopedia = true;
 var CGMV = CGMV || {};
 CGMV.Encyclopedia = CGMV.Encyclopedia || {};
-CGMV.Encyclopedia.version = 1.7;
+CGMV.Encyclopedia.version = 1.8;
 CGMV.Encyclopedia.parameters = PluginManager.parameters('CGMV_Encyclopedia');
 CGMV.Encyclopedia.IncludeBestiary = (CGMV.Encyclopedia.parameters["Include Bestiary"] === "true") ? true : false;
 CGMV.Encyclopedia.IncludeItems = (CGMV.Encyclopedia.parameters["Include Items"] === "true") ? true : false;
@@ -1727,6 +1731,7 @@ CGMV_Window_EncyclopediaDisplay.prototype.drawTextArray = function(y, descriptor
 		}
 		else {
 			var tempWidth = this.textWidth(array[i] + separator);
+			console.log("Textwidth: " + array[i] + " " + tempWidth + " " + x + " " + this.contents.width);
 			if(tempWidth + x > this.contents.width) {
 				if(tempWidth <= this.contents.width) {
 					y += this.lineHeight();
@@ -1806,7 +1811,8 @@ CGMV_Window_EncyclopediaDisplay.prototype.drawEncyclopediaPrice = function(price
 	var y = this.lineHeight();
 	var x = (this._largeIconHeight + this.lineHeight() > y) ? this._largeIconWidth + this.standardPadding() : 0;
 	var descriptor1 = CGMV.Encyclopedia.PriceText + ": ";
-	var descriptor2 = (price == 0) ? CGMV.Encyclopedia.NoPriceText : $cgmvTemp.numberSplit(price) + " " + TextManager.currencyUnit;
+	var currencyUnit = (TextManager.currencyUnit.charAt(0) === " ") ? TextManager.currencyUnit : " " + TextManager.currencyUnit;
+	var descriptor2 = (price == 0) ? CGMV.Encyclopedia.NoPriceText : $cgmvTemp.numberSplit(price) + currencyUnit;
 	this.drawEncyclopediaStandardLine(descriptor1, descriptor2, x, y, this.contents.width);
 };
 //-----------------------------------------------------------------------------
@@ -1879,7 +1885,8 @@ CGMV_Window_EncyclopediaDisplay.prototype.drawEncyclopediaBestiaryRewards = func
 	var descriptor2 = $cgmvTemp.numberSplit(exp);
 	this.drawEncyclopediaStandardLine(descriptor1, descriptor2, x, y, this.contents.width);
 	y += this.lineHeight();
-	descriptor1 = TextManager.currencyUnit + ": ";
+	var currencyUnit = (TextManager.currencyUnit.charAt(0) === " ") ? TextManager.currencyUnit.substring(1) : TextManager.currencyUnit;
+	descriptor1 = currencyUnit + ": ";
 	descriptor2 = $cgmvTemp.numberSplit(gold);
 	this.drawEncyclopediaStandardLine(descriptor1, descriptor2, x, y, this.contents.width);
 };
@@ -1948,7 +1955,14 @@ CGMV_Window_EncyclopediaDisplay.prototype.drawEncyclopediaMeta = function(meta, 
 //-----------------------------------------------------------------------------
 CGMV_Window_EncyclopediaDisplay.prototype.drawEncyclopediaDescription = function(description, y) {
 	if(description === "") return y;
-	var txtArray = description.split(" ");
+	var desc2 = description.split("\n");
+	var txtArray = [];
+	for(var i = 0; i < desc2.length; i++) {
+		var temp = desc2[i].split(" ");
+		for(var j = 0; j < temp.length; j++) {
+			txtArray.push(temp[j]);
+		}
+	}
 	return this.drawTextArray(y, CGMV.Encyclopedia.DescriptionText, txtArray);
 };
 //-----------------------------------------------------------------------------
