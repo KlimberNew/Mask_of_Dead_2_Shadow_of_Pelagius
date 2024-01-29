@@ -98,10 +98,10 @@ Window_HitZone.prototype.initialize = function(){
 }
 
 Window_HitZone.prototype.makeCommandList = function(){
-	this.addCommand('{Голова}', 'head');
-	this.addCommand('{Торс}', 'torso');	
-	this.addCommand('{Руки}', 'arms');
-	this.addCommand('{Ноги}', 'legs');
+	this.addCommand('Голова', 'head');
+	this.addCommand('Торс', 'torso');	
+	this.addCommand('Руки', 'arms');
+	this.addCommand('Ноги', 'legs');
 }
 
 //Hit zone in scene
@@ -1357,14 +1357,16 @@ Sprite_HUDEnemyName.prototype.initialize = function(id, base){
 	this._base = base;
 	this._enemy = $gameTroop.members()[this._id]
 	this._name = this._enemy.name()
-	this.bitmap.drawText(this._name, this.x, this.y, Graphics.boxWidth / 8, 30, 'center');
 	if (!this.isBoss()){
 		this.x = this._base.x
 		this.y = this._base.y + 15
+		var width = 126;
 	} else {
 		this.x = this._base.x + 96
 		this.y = this._base.y
+		var width = 316;
 	}
+	this.bitmap.drawText(this._name, 0, 0, width, 30, 'center'); //Graphics.boxWidth / 8
 }
 
 Sprite_HUDEnemyName.prototype.isBoss = function(){
