@@ -98,10 +98,10 @@ Window_HitZone.prototype.initialize = function(){
 }
 
 Window_HitZone.prototype.makeCommandList = function(){
-	this.addCommand('Голова', 'head');
-	this.addCommand('Торс', 'torso');	
-	this.addCommand('Руки', 'arms');
-	this.addCommand('Ноги', 'legs');
+	this.addCommand('{Голова}', 'head');
+	this.addCommand('{Торс}', 'torso');	
+	this.addCommand('{Руки}', 'arms');
+	this.addCommand('{Ноги}', 'legs');
 }
 
 //Hit zone in scene
