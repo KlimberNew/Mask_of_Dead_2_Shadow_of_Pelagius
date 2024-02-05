@@ -20,6 +20,12 @@
  * By Moghunter 
  * https://atelierrgss.wordpress.com/
  * =============================================================================
+ * UNOFFICIAL VERSION
+ * =============================================================================
+ * +++ MOG - Animated Text (1.3) + DK Localization fix +++
+ * Author: WhitePaperChan
+ * Added compatibility with DK Localization
+ * =============================================================================
  * Apresenta multiplos textos animados na tela.
  *
  * =============================================================================
@@ -425,7 +431,8 @@ InfoText.prototype.disposeLetters = function() {
 InfoText.prototype.refreshText = function() {
 	$gameSystem._infoTextData[this._id][0] = false;
 	if (this._letters) {this.disposeLetters()};
-	var lt = this.text().toString().split("");
+	var lt = DKTools.Localization.getText(this.text().toString());
+	var lt = lt.split("");
 	if ($gameSystem._infoTextData[this._id][1] < 0 || lt.length === 0) {return};
 	this._letters = [];
 	var dir = this.pos() === 0 ? 0 : 1;
