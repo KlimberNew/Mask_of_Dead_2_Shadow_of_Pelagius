@@ -320,7 +320,9 @@ Game_Enemy.prototype.onRestrict = function() {
 ATB.Game_Actor_onRestrict = Game_Actor.prototype.onRestrict;
 Game_Actor.prototype.onRestrict = function() {
     ATB.Game_Actor_onRestrict.call(this);
-	BattleManager._battlersTurns[this._atbActorId][3] = false;
+	if (SceneManager._scene == Scene_Battle){
+		BattleManager._battlersTurns[this._atbActorId][3] = false;
+	}
 };
 
 Game_Enemy.prototype.revive = function() {
@@ -366,10 +368,10 @@ Game_Actor.prototype.setAtbActor = function(atbActorId){
 ATB.Game_Actor_performCollapse = Game_Actor.prototype.performCollapse
 Game_Actor.prototype.performCollapse = function() {
 	if (SceneManager._scene == Scene_Battle){
-		spriteset = BattleManager._spriteset
-		spriteset.deleteInfo(this._atbActorId, spriteset._atbActors, 0)
+		spriteset = BattleManager._spriteset;
+		spriteset.deleteInfo(this._atbActorId, spriteset._atbActors, 0);
+		BattleManager._battlersTurns[this._atbActorId][3] = false;
 	}
-	BattleManager._battlersTurns[this._atbActorId][3] = false;
     ATB.Game_Actor_performCollapse.apply(this)
 };
 
