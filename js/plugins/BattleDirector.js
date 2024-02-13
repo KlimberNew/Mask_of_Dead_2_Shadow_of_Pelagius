@@ -14,19 +14,19 @@
  * StopBattle - зупинити битви
  * 
  * BattleDirector ally 450 50 40 1 A - подія-союзни_ця зі:
- * * здоров'ям 450 
- * * атакою 50 
- * * захистом 40 
- * * анімацією атаки 1
- * * локальним перемикачем A після поразки
+ * здоров'ям 450 
+ * атакою 50 
+ * захистом 40 
+ * анімацією атаки 1
+ * локальним перемикачем A після поразки
  * 
  * 
  * BattleDirector enemy 450 50 40 1 A - подія-противни_ця зі:
- * * здоров'ям 450 
- * * атакою 50 
- * * захистом 40 
- * * анімацією атаки 1
- * * локальним перемикачем A після поразки
+ * здоров'ям 450 
+ * атакою 50 
+ * захистом 40 
+ * анімацією атаки 1
+ * локальним перемикачем A після поразки
  * 
  * Скрипти
  * 
@@ -40,6 +40,15 @@
  * battleDirectorEventHP(0) - здоров'я (HP) цієї події
  * battleDirectorEventMHP(0) - максимальне здоров'я (MHP) цієї події
  * battleDirectorEventHPRate(0) - співвідношення HP і MHP цієї події
+ * 
+ * checkIfBattleDirector() - команда плагіна BattleDirector у вигляді функції скрипта
+ * 
+ * Приклад використання: 
+ * 
+ * var Id = 2;
+ * var params = ["BattleDirector", "ally", 150, 50, 10, 6, "D"];
+ * checkIfBattleDirector($gameMap.event(Id), params);
+ *  
  */
 
 ///TODO: Адаптувати під різну тривалість анімацій
@@ -63,6 +72,7 @@ Game_Interpreter.prototype.pluginCommand = function(command, args) {
 function checkIfBattleDirector(event, params){
     if (params[0] == "BattleDirector"){
         BattleDirector_setAllyOrEnemy(event, params);
+        //console.log(event, params);
     }
 }
 
