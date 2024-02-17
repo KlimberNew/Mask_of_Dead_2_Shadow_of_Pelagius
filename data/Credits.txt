@@ -4,36 +4,36 @@ will not display in the credits scene
 <block:-1,-1,10,10,offbot,center>
 CREDITS
 
-\c[2]Idea
+\c[2]{Idea}
 Klimber
 Banana
 
-\c[2]Story
+\c[2]{Story}
 Klimber
 Banana
 
-\c[2]Gamedesign
-Klimber
-Banana
-VarVarKa
-
-\c[2]Q&A
-Banana
-
-\c[2]Mapping
+\c[2]{Gamedesign}
 Klimber
 Banana
 VarVarKa
 
-\c[2]Art
+\c[2]{Q&A}
+Banana
+
+\c[2]{Mapping}
+Klimber
+Banana
+VarVarKa
+
+\c[2]{Art}
 Klimber
 
-\c[2]Developing
+\c[2]{Developing}
 VarVarKa
 Klimber
 WhitePaperChan
 
-\c[2]Music
+\c[2]{Music}
 Виталий Красноружев - Jugged Canyon Theme
 Виталий Красноружев - Save Zone Theme
 Виталий Красноружев - Main Menu Theme
@@ -52,7 +52,51 @@ Feel free to use this song as a soundtrack for your
 next youtube video, game or just background music for training 
 or gaming.
 
-\c[2]Special thanks
+\c[2]{Plugins}
+ATB_WIP.js
+EventFlagSystem_WIP.js
+BattleDirector_WIP.js
+Stealth_WIP.js
+LocalMap_WIP.js
+CheckEventTriggerTouchAllFollowers_WIP.js
+CGMV AchievementScript.js
+CGMV CoreScript.js
+CGMV EncyclopediaLocalizationFix.js
+CGMV Encyclopedia.js
+CGMV MenuCommandWindow.js
+TitleCommandPosition.js
+FELSKI_AUTOSAVE.js
+YEP_CoreEngine.js
+YEP_EquipCore.js
+YEP_ItemCore.js
+YEP_ItemSynthesis.js
+YEP_SaveCore.js
+YEP_SkillCore.js
+YEP_MessageCore.js
+YEP_QuestJournal.js
+YEP_SaveEventLocations.js
+YEP_MoveRouteCore.js
+YEP_X_ItemUpgradeSlots.js
+YEP_X_EquipCustomize.js
+SelfSwitcher_Pavel Sotnikov.js
+ScreenVariables_Dirge.js
+SRD_FullscreenToggleOption.js
+TerraxLighting.js
+MOG_ActorHud.js
+MOG_AnimatedText.js
+MOG_TreasurePopup.js
+GALV_EventSpawner.js
+GALV_LayerGraphics.js
+GALV_RollCredits.js
+BBS_VersionDisplay_Michael Morris.js
+FilterController_Tsukimi.js
+ARP_TitleCommandExit.js
+OcRam_Core_Marko Paakkunainen.js
+Event After Load_mrcopra.js
+DKTools.js
+DKTools_Localization.js
+
+\c[2]{Special thanks}
 GreenLeo(GreenVegeta)
 ElBlanko
 
