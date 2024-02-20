@@ -503,9 +503,6 @@ BattleManager.update = function() {
 				}
 				this._battlersTurns[i][2] = true;
 				this._battlersTurns[i][1] = ATB.Param.Base;
-				if (this._battlersTurns[i][0] == this._slowestBattler){
-					$gameTroop.increaseTurn();
-				}
 				if (i < this._actorsLength){
 					this._playerTurn = true;
 					this._subject = $gameParty.members()[i];
@@ -522,6 +519,9 @@ BattleManager.update = function() {
 					}
 				}
 				this._battlersTurns[i][2] = true;
+				if (this._battlersTurns[i][0] == this._slowestBattler){
+					$gameTroop.increaseTurn();
+				}
 			}
 		}
 	}
@@ -950,7 +950,7 @@ Sprite_ATBMagic.prototype.update = function(){
 		BattleManager._battlersTurns[this._id + $gameParty.members().length][0]._actions[0] != undefined) {
 
 		skill = BattleManager._battlersTurns[this._id + $gameParty.members().length][0]._actions[0]._item
-		if (skill._dataClass == "skill") {
+		if (skill._dataClass == "skill" && $gameTroop.members()[this._id].meetsSkillConditions($dataSkills[skill._itemId])) {
 			if ($dataSkills[skill._itemId].hitType != 0){
 				if ($dataSkills[skill._itemId].hitType == 1){
 					this.bitmap = this._physBitmap;
