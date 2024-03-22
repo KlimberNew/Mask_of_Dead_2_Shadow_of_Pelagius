@@ -179,6 +179,6 @@ null,
 {"id":177,"expanded":true,"name":"+_Форпост","order":153,"parentId":78,"scrollX":1622,"scrollY":915,"quick":false},
 {"id":178,"expanded":true,"name":"+_Форпост(лифт)","order":154,"parentId":177,"scrollX":1638,"scrollY":1485,"quick":false},
 {"id":179,"expanded":true,"name":"+_Форпост(комната управления)","order":155,"parentId":178,"scrollX":816,"scrollY":800,"quick":false},
-{"id":180,"expanded":false,"name":"+_Форпост(блоки питания)","order":156,"parentId":179,"scrollX":1390.2857142857142,"scrollY":1236.857142857143,"quick":false},
+{"id":180,"expanded":false,"name":"+_Форпост(блоки питания)","order":156,"parentId":179,"scrollX":1389.818181818182,"scrollY":669.2727272727273,"quick":false},
 {"id":181,"expanded":true,"name":"+_Форпост","order":78,"parentId":34,"scrollX":982.8,"scrollY":651,"quick":false}
 ]
