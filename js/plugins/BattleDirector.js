@@ -5,7 +5,12 @@
 /*:
  * @plugindesc Боєвий режисер.
  * @author WhitePaper
- *
+ * 
+ * @param Delay
+ * @type number
+ * @desc Кадри затримки між атаками
+ * @default 60
+ * 
  * @help 
  * Команди плагіну
  * 
@@ -14,19 +19,19 @@
  * StopBattle - зупинити битви
  * 
  * BattleDirector ally 450 50 40 1 A - подія-союзни_ця зі:
- * здоров'ям 450 
- * атакою 50 
- * захистом 40 
- * анімацією атаки 1
- * локальним перемикачем A після поразки
+ * * здоров'ям 450 
+ * * атакою 50 
+ * * захистом 40 
+ * * анімацією атаки 1
+ * * локальним перемикачем A після поразки
  * 
  * 
  * BattleDirector enemy 450 50 40 1 A - подія-противни_ця зі:
- * здоров'ям 450 
- * атакою 50 
- * захистом 40 
- * анімацією атаки 1
- * локальним перемикачем A після поразки
+ * * здоров'ям 450 
+ * * атакою 50 
+ * * захистом 40 
+ * * анімацією атаки 1
+ * * локальним перемикачем A після поразки
  * 
  * Скрипти
  * 
@@ -40,20 +45,12 @@
  * battleDirectorEventHP(0) - здоров'я (HP) цієї події
  * battleDirectorEventMHP(0) - максимальне здоров'я (MHP) цієї події
  * battleDirectorEventHPRate(0) - співвідношення HP і MHP цієї події
- * 
- * checkIfBattleDirector() - команда плагіна BattleDirector у вигляді функції скрипта
- * 
- * Приклад використання: 
- * 
- * var Id = 2;
- * var params = ["BattleDirector", "ally", 150, 50, 10, 6, "D"];
- * checkIfBattleDirector($gameMap.event(Id), params);
- *  
  */
 
 ///TODO: Адаптувати під різну тривалість анімацій
 
-
+BattleDirector_Parameters = PluginManager.parameters('BattleDirector');
+BattleDirector_Delay = Number(BattleDirector_Parameters['Delay']) || 60;
 //===== Plugin command =====
 selfSwitchLetters = ["A", "B", "C", "D"]
 
@@ -72,7 +69,6 @@ Game_Interpreter.prototype.pluginCommand = function(command, args) {
 function checkIfBattleDirector(event, params){
     if (params[0] == "BattleDirector"){
         BattleDirector_setAllyOrEnemy(event, params);
-        //console.log(event, params);
     }
 }
 
@@ -110,6 +106,7 @@ function BattleDirector_setAllyOrEnemy(event, params){
     event._battleDirectorAnimation = anim;
     event._battleDirectorSelfSwitch = letter;
     event._battleDirectorDefeated = false;
+    event._timer = 0;
 }
 
 //Перевірка, чи є бойовий директор 0 чи 2 у списку команд подій (2, бо стелс прямокутник + стелс круг )
@@ -166,7 +163,11 @@ Game_Event.prototype.update = function() {
     BattleDirector_Game_Event_prototype_update.call(this);
     this.checkEventTriggerAuto();
     this.updateParallel();
-    if ($gameSystem.isBattleStarted() && this._battleDirectorType != undefined && !this._battleDirectorDefeated && !this.isMoving()){
+    if (this._timer > 0){
+        if (!this.isAnimationPlaying()){
+            this._timer--;
+        }
+    } else if ($gameSystem.isBattleStarted() && this._battleDirectorType != undefined && !this._battleDirectorDefeated && !this.isMoving()){
         this.battleManagerCheckBattlerFront(this._direction);
     }
 };
@@ -191,7 +192,7 @@ Game_Event.prototype.battleDirectorIsDifferentType = function(event){
 //Перевірка, чи є хтось попереду + обробка атаки (ім'я щось не дуже, бо здається, наче тільки перевіряє)
 Game_Event.prototype.battleManagerCheckBattler = function(x, y) {
     $gameMap.eventsXy(x, y).forEach(function(event) {
-        if (this.battleDirectorIsDifferentType(event) && !event.battleDirectorIsDefeated() && !this.battleDirectorIsDefeated() && !this.isAnimationPlaying() && !event.isAnimationPlaying()) {
+        if (this.battleDirectorIsDifferentType(event) && !event.battleDirectorIsDefeated() && !this.battleDirectorIsDefeated() && !this.isAnimationPlaying() && !event.isAnimationPlaying() && event._timer <= 0) {
             battleDirectorProcessAttack(event, this);
             battleDirectorProcessAttack(this, event);
         }
@@ -202,6 +203,7 @@ Game_Event.prototype.battleManagerCheckBattler = function(x, y) {
 function battleDirectorProcessAttack(attacker, target){
     target._battleDirectorHP -= attacker._battleDirectorATK / target._battleDirectorDEF;
     target.requestAnimation(attacker._battleDirectorAnimation);
+    target._timer = BattleDirector_Delay;
     if (target._battleDirectorHP <= 0){
         target._battleDirectorDefeated = true;
         var key = [target._mapId, target._eventId, target._battleDirectorSelfSwitch];
