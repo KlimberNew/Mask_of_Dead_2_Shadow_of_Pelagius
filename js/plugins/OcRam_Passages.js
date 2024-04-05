@@ -1387,7 +1387,7 @@ ImageManager.loadTileset_OC = function (filename) {
                     else if (s._x > ex) { s.visible = false; }
                     else if (s._y < my) { s.visible = false; }
                     else if (s._y > ey) { s.visible = false; }
-                    else { s.visible = true; }
+                    //else { s.visible = true; }
                 });
             }
         }
