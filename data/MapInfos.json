@@ -185,7 +185,7 @@ null,
 {"id":183,"expanded":true,"name":"{60.3 Лабиринт(центральный барьер)}","order":158,"parentId":78,"scrollX":675.2727272727273,"scrollY":819.8181818181819,"quick":false},
 {"id":184,"expanded":true,"name":"{63 Лабаринт(обрушеный мост)}","order":168,"parentId":174,"scrollX":675.2727272727273,"scrollY":380.1818181818182,"quick":false},
 {"id":185,"expanded":true,"name":"{63-1 Выход из лабаринта}","order":169,"parentId":184,"scrollX":756,"scrollY":1158,"quick":false},
-{"id":186,"expanded":false,"name":"{СТОП Лабаринт}","order":170,"parentId":185,"scrollX":675.2727272727273,"scrollY":380.1818181818182,"quick":false},
+{"id":186,"expanded":false,"name":"{{64 Лабиринт(Развязка)}}","order":170,"parentId":185,"scrollX":825.3333333333334,"scrollY":464.6666666666667,"quick":false},
 {"id":187,"expanded":true,"name":"{63-2 Падение в пропасть}","order":171,"parentId":184,"scrollX":684,"scrollY":464.1818181818182,"quick":false},
 {"id":188,"expanded":true,"name":"{63-3 Лабиринт(пещера)}","order":172,"parentId":187,"scrollX":675.2727272727273,"scrollY":371.4545454545455,"quick":false},
 {"id":189,"expanded":true,"name":"{63-4 Лабиринт(пещера_см.пункт)}","order":173,"parentId":188,"scrollX":675.2727272727273,"scrollY":371.4545454545455,"quick":false}
