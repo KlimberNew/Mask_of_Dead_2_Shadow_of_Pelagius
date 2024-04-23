@@ -174,7 +174,8 @@ Scene_Battle.prototype.onEnemyCancel = function() {
     this._enemyWindow.hide();
     switch (this._actorCommandWindow.currentSymbol()) {
     case 'attack':
-		this._actorCommandWindow.setup(BattleManager.actor())
+		this._actorCommandWindow.setup(BattleManager.actor());
+		//this._actorCommandWindow.x = this._spriteset._actorSprites[BattleManager.actor()._atbActorId] - this._actorCommandWindow.width / 2;
 		this._actorCommandWindow.show();
         this._actorCommandWindow.activate();
         break;
@@ -354,6 +355,19 @@ Game_Enemy.prototype.hideHUD = function(){
 		BattleManager._spriteset._enemyFaces[this._atbEnemyId].opacity = 0;
 	}
 }
+
+//Update enemy's HUD name and ATB image after transformation
+ATB.Game_Enemy_prototype_transform = Game_Enemy.prototype.transform
+Game_Enemy.prototype.transform = function(enemyId) {
+	ATB.Game_Enemy_prototype_transform.call(this, enemyId);
+	BattleManager._spriteset._hudEnemiesNames[this._atbEnemyId].refresh();
+	if (doPathExist("img/system/Enemy_" + this._enemyId + ".png")){
+		filename = "Enemy_" + this._enemyId;
+	} else{
+		filename = "Enemy_N"
+	}
+	BattleManager._spriteset._atbEnemies[this._atbEnemyId].changePicture(filename);
+};
 
 ATB.Game_Actor_setup = Game_Actor.prototype.setup
 Game_Actor.prototype.setup = function(actorId) {
@@ -749,10 +763,12 @@ Scene_Battle.prototype.changeInputWindow = function() {
         if (this._hitZoneWindow != undefined || !BattleManager._playerTurn){
 			//do nothing
 		} else if(BattleManager.actor()) {
+			this.changeCommandPosition();
             this.startActorCommandSelection();
         } else {
 			if ($gameParty.members()[BattleManager._activeActor].canInput()){
 				BattleManager.changeActor(BattleManager._activeActor, 'undecided');
+				this.changeCommandPosition();
 				this.startActorCommandSelection();
 			} else {
 				BattleManager.startTurn();
@@ -920,6 +936,11 @@ Sprite_ATBEnemy.prototype.update = function(){
 		}
 		
 	}
+}
+
+Sprite_ATBEnemy.prototype.changePicture = function(picture){
+	this.bitmap.clear();
+	this.bitmap = ImageManager.loadSystem(picture);
 }
 
 function Sprite_ATBMagic(){
@@ -1362,19 +1383,24 @@ Sprite_HUDEnemyName.prototype.initialize = function(id, base){
 	if (!this.isBoss()){
 		this.x = this._base.x
 		this.y = this._base.y + 15
-		var width = 126;
+		this.width = 126;
 	} else {
 		this.x = this._base.x + 96
 		this.y = this._base.y
-		var width = 316;
+		this.width = 316;
 	}
-	this.bitmap.drawText(this._name, 0, 0, width, 30, 'center'); //Graphics.boxWidth / 8
+	this.bitmap.drawText(this._name, 0, 0, this.width, 30, 'center'); //Graphics.boxWidth / 8
 }
 
 Sprite_HUDEnemyName.prototype.isBoss = function(){
 	return $gameTroop.members()[this._id].enemy().meta.Boss
 }
 
+Sprite_HUDEnemyName.prototype.refresh = function(){
+	this._name = this._enemy.name();
+	this.bitmap.clear();
+	this.bitmap.drawText(this._name, 0, 0, this.width, 30, 'center');
+}
 
 function Sprite_HUDEnemyFace(){
 	this.initialize.apply(this, arguments);
@@ -1475,6 +1501,17 @@ Scene_Battle.prototype.startActorCommandSelection = function() {
     this._actorCommandWindow.setup(BattleManager.actor());
 };
 
+Scene_Battle.prototype.changeCommandPosition = function(){
+	let actorX = this._spriteset._actorSprites[BattleManager.actor()._atbActorId].x;
+	let actorY = this._spriteset._actorSprites[BattleManager.actor()._atbActorId].y;
+	let actorWidth = this._spriteset._actorSprites[BattleManager.actor()._atbActorId].children[2].width;
+	let actorHeight = this._spriteset._actorSprites[BattleManager.actor()._atbActorId].children[2].height;
+	this._actorCommandWindow.x = actorX - actorWidth - this._actorCommandWindow.width;
+	this._actorCommandWindow.y = actorY - actorHeight - this._actorCommandWindow.height;
+	this._partyCommandWindow.x = this._actorCommandWindow.x;
+	this._partyCommandWindow.y = this._actorCommandWindow.y;
+}
+
 Scene_Battle.prototype.endCommandSelection = function() {
     this._partyCommandWindow.close();
     this._actorCommandWindow.close();
@@ -1530,9 +1567,9 @@ BattleManager.selectPreviousCommand = function() {
 ATB.Scene_Battle_createDisplayObjects = Scene_Battle.prototype.createDisplayObjects;
 Scene_Battle.prototype.createDisplayObjects = function() {
     ATB.Scene_Battle_createDisplayObjects.call(this);
-	this._actorCommandWindow.x = 600 - this._actorCommandWindow.width / 2;
+	this._actorCommandWindow.x = Graphics.boxWidth - this._actorCommandWindow.width;
 	this._actorCommandWindow.y = 280 - 64 - this._actorCommandWindow.height;
-	this._partyCommandWindow.x = 600 - this._partyCommandWindow.width / 2;
+	this._partyCommandWindow.x = Graphics.boxWidth - this._partyCommandWindow.width;
 	this._partyCommandWindow.y = 280 - 64 - this._partyCommandWindow.height;
 };
 
