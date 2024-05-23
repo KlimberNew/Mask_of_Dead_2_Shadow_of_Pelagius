@@ -306,7 +306,8 @@ Game_Enemy.prototype.setAtbEnemy = function(atbEnemyId){
 ATB.Game_Enemy_performCollapse = Game_Enemy.prototype.performCollapse
 Game_Enemy.prototype.performCollapse = function() {
 	spriteset = BattleManager._spriteset
-	spriteset.deleteInfo(this._atbEnemyId, spriteset._atbEnemies, 0)
+	//spriteset.deleteInfo(this._atbEnemyId, spriteset._atbEnemies, 0)
+	spriteset._atbEnemies[this._atbEnemyId].opacity = 0;
 	this.hideHUD();
 	BattleManager._battlersTurns[this._atbEnemyId + BattleManager._actorsLength][3] = false;
     ATB.Game_Enemy_performCollapse.apply(this)
@@ -328,8 +329,27 @@ Game_Actor.prototype.onRestrict = function() {
 
 Game_Enemy.prototype.revive = function() {
     Game_BattlerBase.prototype.revive.apply(this);
-	BattleManager._spriteset._battleField.addChild(BattleManager._spriteset._atbEnemies[this._atbEnemyId]);
+	BattleManager._spriteset._atbEnemies[this._atbEnemyId].opacity = 255;
+	//BattleManager._spriteset._battleField.addChild(BattleManager._spriteset._atbEnemies[this._atbEnemyId]);
 	this.showHUD();
+};
+
+Game_Enemy.prototype.hide = function() {
+	Game_BattlerBase.prototype.hide.apply(this);
+	spriteset = BattleManager._spriteset
+	if (spriteset){
+		spriteset._atbEnemies[this._atbEnemyId].opacity = 0;
+		this.hideHUD();
+	}
+};
+
+Game_Actor.prototype.hide = function() {
+	Game_BattlerBase.prototype.hide.apply(this);
+	spriteset = BattleManager._spriteset
+	if (spriteset){
+		spriteset._atbActors[this._atbActorId].opacity = 0;
+		this.hideHUD();
+	}
 };
 
 Game_Enemy.prototype.appear = function() {
@@ -359,14 +379,31 @@ Game_Enemy.prototype.hideHUD = function(){
 //Update enemy's HUD name and ATB image after transformation
 ATB.Game_Enemy_prototype_transform = Game_Enemy.prototype.transform
 Game_Enemy.prototype.transform = function(enemyId) {
-	ATB.Game_Enemy_prototype_transform.call(this, enemyId);
-	BattleManager._spriteset._hudEnemiesNames[this._atbEnemyId].refresh();
-	if (doPathExist("img/system/Enemy_" + this._enemyId + ".png")){
-		filename = "Enemy_" + this._enemyId;
+	if (doPathExist("img/system/Enemy_" + enemyId + ".png")){
+		filename = "Enemy_" + enemyId;
 	} else{
 		filename = "Enemy_N"
 	}
 	BattleManager._spriteset._atbEnemies[this._atbEnemyId].changePicture(filename);
+	ATB.Game_Enemy_prototype_transform.call(this, enemyId);
+	BattleManager._spriteset._hudEnemiesNames[this._atbEnemyId].refresh();
+
+};
+
+ATB.Sprite_Enemy_prototype_updateBitmap = Sprite_Enemy.prototype.updateBitmap;
+Sprite_Enemy.prototype.updateBitmap = function() {
+    var name = this._enemy.battlerName();
+    var hue = this._enemy.battlerHue();
+	let isChanged = (this._battlerName !== name || this._battlerHue !== hue)
+    ATB.Sprite_Enemy_prototype_updateBitmap.call(this);
+	if (isChanged){
+		this.startEffect('appear');
+	}
+};
+
+ATB.Sprite_Enemy_prototype_updateEffect = Sprite_Enemy.prototype.updateEffect;
+Sprite_Enemy.prototype.updateEffect = function() {
+	ATB.Sprite_Enemy_prototype_updateEffect.call(this);
 };
 
 ATB.Game_Actor_setup = Game_Actor.prototype.setup
@@ -939,7 +976,7 @@ Sprite_ATBEnemy.prototype.update = function(){
 }
 
 Sprite_ATBEnemy.prototype.changePicture = function(picture){
-	this.bitmap.clear();
+	//this.bitmap.clear();
 	this.bitmap = ImageManager.loadSystem(picture);
 }
 
