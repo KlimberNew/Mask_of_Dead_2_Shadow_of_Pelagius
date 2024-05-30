@@ -206,7 +206,7 @@ BattleManager.startTurn = function() {
 	if (this._subject != null && this._subject.isEnemy()){
 		this._actionEnemies.push(this._subject); //add current active enemy to order
 	}
-	this._subject = $gameParty.members()[this._activeActor];
+	this._subject = $gameParty.battleMembers()[this._activeActor];
     this._phase = 'turn';
     this.makeActionOrders();
     $gameParty.requestMotionRefresh();
@@ -282,7 +282,7 @@ BattleManager.selectNextCommand = function() {
 			if (this._actorIndex < 0){
 				this.changeActor(this._activeActor, 'waiting');
 			} else {
-				this.subject = $gameParty.members()[this._actorIndex]
+				this.subject = $gameParty.battleMembers()[this._actorIndex]
 				this.changeActor(this._actorIndex + this._actorsLength, 'waiting');
 			}
             if (this._actorIndex >= $gameParty.size()) {//same as original
@@ -465,7 +465,7 @@ BattleManager.updateEscape = function(){
 }
 
 BattleManager.makeActionOrders = function() {
-    this._actionBattlers = $gameParty.members();
+    this._actionBattlers = $gameParty.battleMembers();
 };
 
 ATB.BattleManager_startBattle = BattleManager.startBattle;
@@ -473,7 +473,7 @@ BattleManager.startBattle = function() {
     ATB.BattleManager_startBattle.apply(this);
 	this._battlersTurns = [];
 	battlers = [];
-	battlers = battlers.concat($gameParty.members());
+	battlers = battlers.concat($gameParty.battleMembers());
 	battlers = battlers.concat($gameTroop.members());
 	this._slowestBattler = battlers[0];
 	for (i = 0; i < battlers.length; i++){
@@ -482,7 +482,7 @@ BattleManager.startBattle = function() {
 			this._slowestBattler = battlers[i];
 		}
 	}
-	this._actorsLength = $gameParty.members().length
+	this._actorsLength = $gameParty.battleMembers().length
 	$gameTroop.makeActions();
 	this.refreshStatus();
 	this._activeActor = null;
@@ -556,7 +556,7 @@ BattleManager.update = function() {
 				this._battlersTurns[i][1] = ATB.Param.Base;
 				if (i < this._actorsLength){
 					this._playerTurn = true;
-					this._subject = $gameParty.members()[i];
+					this._subject = $gameParty.battleMembers()[i];
 					this._activeActor = i;
 					this._isAction = true;
 				} else {
@@ -601,7 +601,7 @@ BattleManager.update = function() {
 };
 
 BattleManager.isActorAnimationPlaying = function(actor){
-	return this._spriteset._actorSprites[actor].isAnimationPlaying() || $gameParty.members()[actor].isAnimationRequested();
+	return this._spriteset._actorSprites[actor].isAnimationPlaying() || $gameParty.battleMembers()[actor].isAnimationRequested();
 }
 
 BattleManager.isEnemyAnimationPlaying = function(enemy){
@@ -758,7 +758,7 @@ BattleManager.updateTurnEnd = function() {
 
 BattleManager.startInput = function() {
     this._phase = 'input';
-	this._subject = $gameParty.members()[this._activeActor];
+	this._subject = $gameParty.battleMembers()[this._activeActor];
 	this._subject.makeActions();
     $gameTroop.makeActions();
     this.clearActor();
@@ -780,7 +780,7 @@ BattleManager.processForcedAction = function() {
     if (this._actionForcedBattler) {
         this._turnForced = true;
         this._subject = this._actionForcedBattler;
-        if (this._subject._actions.length <= 1 || (this._subject.isEnemy() && this._battlersTurns[$gameParty.members().length + this._subject.index()][1] > 0)){
+        if (this._subject._actions.length <= 1 || (this._subject.isEnemy() && this._battlersTurns[$gameParty.battleMembers().length + this._subject.index()][1] > 0)){
 			this._actionForcedBattler = null;
 		}
         this.startAction();
@@ -803,7 +803,7 @@ Scene_Battle.prototype.changeInputWindow = function() {
 			this.changeCommandPosition();
             this.startActorCommandSelection();
         } else {
-			if ($gameParty.members()[BattleManager._activeActor].canInput()){
+			if ($gameParty.battleMembers()[BattleManager._activeActor].canInput()){
 				BattleManager.changeActor(BattleManager._activeActor, 'undecided');
 				this.changeCommandPosition();
 				this.startActorCommandSelection();
@@ -831,7 +831,7 @@ Spriteset_Battle.prototype.createLowerLayer = function() {
 	this._hudTextsNum = [];
 	this._actorStateIcons = [[], [], [], []];
 	this.createHUDEnemies();
-	for (i in $gameParty.members()){
+	for (i in $gameParty.battleMembers()){
 		this.createHPBase(i); //this.createHPBase(x + (Graphics.boxWidth - x) / 4 * i, y, i);
 		this.createHPBar(i);
 		this.createMPBar(i);
@@ -865,7 +865,7 @@ Spriteset_Battle.prototype.createATBActor = function(){
 		}
 		this._atbActors.push(new Sprite_ATBActor(filename, this._atbBase, i));
 		this._battleField.addChild(this._atbActors[i]);
-		$gameParty.members()[i].setAtbActor(i)
+		$gameParty.battleMembers()[i].setAtbActor(i)
 	}
 }
 
@@ -963,7 +963,7 @@ Sprite_ATBEnemy.prototype.initialize = function(picture, atbBase, id){
 Sprite_ATBEnemy.prototype.update = function(){
 	Sprite_Base.prototype.update.call(this);
 	if (this._atbBase != undefined && BattleManager._battlersTurns != undefined 
-	&& BattleManager._battlersTurns.length == $gameParty.members().length + $gameTroop.members().length){
+	&& BattleManager._battlersTurns.length == $gameParty.battleMembers().length + $gameTroop.members().length){
 		this.x = this._atbBase.x + 50;
 		if (BattleManager._battlersTurns[this._id + BattleManager._actorsLength][1] == ATB.Param.Base){
 			this.y = 0;
@@ -1004,10 +1004,10 @@ Sprite_ATBMagic.prototype.update = function(){
 	this.y = this._enemyBase.y + (this._enemyBase.height - this.height)/2;
 	this.x = this._enemyBase.x + this._enemyBase.width + this.width;
 	if (BattleManager._battlersTurns != undefined
-		&& BattleManager._battlersTurns[this._id + $gameParty.members().length] != undefined &&
-		BattleManager._battlersTurns[this._id + $gameParty.members().length][0]._actions[0] != undefined) {
+		&& BattleManager._battlersTurns[this._id + $gameParty.battleMembers().length] != undefined &&
+		BattleManager._battlersTurns[this._id + $gameParty.battleMembers().length][0]._actions[0] != undefined) {
 
-		skill = BattleManager._battlersTurns[this._id + $gameParty.members().length][0]._actions[0]._item
+		skill = BattleManager._battlersTurns[this._id + $gameParty.battleMembers().length][0]._actions[0]._item
 		if (skill._dataClass == "skill" && $gameTroop.members()[this._id].meetsSkillConditions($dataSkills[skill._itemId])) {
 			if ($dataSkills[skill._itemId].hitType != 0){
 				if ($dataSkills[skill._itemId].hitType == 1){
@@ -1058,7 +1058,7 @@ Spriteset_Battle.prototype.createTPBar = function(id){
 }
 
 Spriteset_Battle.prototype.createHUDFace = function(id){
-	this._hudFaces.push(new Sprite_HUDFace($gameParty.members()[id]._faceName, $gameParty.members()[id]._faceIndex, this._hpBases[id]));
+	this._hudFaces.push(new Sprite_HUDFace($gameParty.battleMembers()[id]._faceName, $gameParty.battleMembers()[id]._faceIndex, this._hpBases[id]));
 	this._battleField.addChild(this._hudFaces[id]);
 }
 
@@ -1112,7 +1112,7 @@ Sprite_HPBar.prototype.initialize = function(base){
 	this.refresh();
 }
 Sprite_HPBar.prototype.refresh = function(){
-	var pw = Math.floor(this._bitmap.width * $gameParty.members()[this._id].hpRate())
+	var pw = Math.floor(this._bitmap.width * $gameParty.battleMembers()[this._id].hpRate())
 	this.setFrame(0, 0, pw, this._bitmap.height)
 }
 
@@ -1134,7 +1134,7 @@ Sprite_MPBar.prototype.initialize = function(base){
 	this.refresh();
 }
 Sprite_MPBar.prototype.refresh = function(){
-	var pw = Math.floor(this._bitmap.width * $gameParty.members()[this._id].mpRate())
+	var pw = Math.floor(this._bitmap.width * $gameParty.battleMembers()[this._id].mpRate())
 	this.setFrame(0, 0, pw, this._bitmap.height)
 }
 
@@ -1156,7 +1156,7 @@ Sprite_TPBar.prototype.initialize = function(base){
 	this.refresh();
 }
 Sprite_TPBar.prototype.refresh = function(){
-	var pw = Math.floor(this._bitmap.width * $gameParty.members()[this._id].tpRate())
+	var pw = Math.floor(this._bitmap.width * $gameParty.battleMembers()[this._id].tpRate())
 	this.setFrame(0, 0, pw, this._bitmap.height)
 }
 
@@ -1206,9 +1206,9 @@ Sprite_TextOnBarsNum.prototype.refresh = function(){
 }
 
 Sprite_TextOnBarsNum.prototype.drawText = function(){
-	hptext = $gameParty.members()[this._id].hp + "/" + $gameParty.members()[this._id].mhp
-	mptext = $gameParty.members()[this._id].mp + "/" + $gameParty.members()[this._id].mmp
-	tptext = $gameParty.members()[this._id].tp
+	hptext = $gameParty.battleMembers()[this._id].hp + "/" + $gameParty.battleMembers()[this._id].mhp
+	mptext = $gameParty.battleMembers()[this._id].mp + "/" + $gameParty.battleMembers()[this._id].mmp
+	tptext = $gameParty.battleMembers()[this._id].tp
 	this.bitmap.drawText(hptext, 123-this.bitmap.measureTextWidth(hptext), 4, 123, 36);
 	this.bitmap.drawText(mptext, 123-this.bitmap.measureTextWidth(mptext), 35, 123, 36);
 	this.bitmap.drawText(tptext, 123-this.bitmap.measureTextWidth(tptext), 68, 123, 36);
@@ -1253,7 +1253,7 @@ Sprite_HUDName.prototype.initialize = function(id, base){
 	Sprite_Base.prototype.initialize.call(this);
 	this.bitmap = new Bitmap(98, 29)
 	this._id = id;
-	this._name = $gameParty.members()[id]._name;
+	this._name = $gameParty.battleMembers()[id]._name;
 	this.x = base.x + 0
 	this.y = base.y + 96
 	this.bitmap.drawText(this._name, 0, 0, this.bitmap.width, this.bitmap.height, 'center');
@@ -1278,7 +1278,7 @@ Sprite_ActorStateIcon.prototype.initialize = function(id, base, prior){
 }
 
 Sprite_ActorStateIcon.prototype.refresh = function(){
-	var actor = $gameParty.members()[this._id]
+	var actor = $gameParty.battleMembers()[this._id]
 	var iconIndex = actor.allIcons()[this._prior];
     var pw = Window_Base._iconWidth;
     var ph = Window_Base._iconHeight;
