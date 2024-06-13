@@ -390,6 +390,12 @@ Game_Enemy.prototype.transform = function(enemyId) {
 
 };
 
+ATB.Sprite_Enemy_prototype_initMembers = Sprite_Enemy.prototype.initMembers
+Sprite_Enemy.prototype.initMembers = function() {
+    ATB.Sprite_Enemy_prototype_initMembers.call(this);
+    this._waitToAppear = false;
+};
+
 ATB.Sprite_Enemy_prototype_updateBitmap = Sprite_Enemy.prototype.updateBitmap;
 Sprite_Enemy.prototype.updateBitmap = function() {
     var name = this._enemy.battlerName();
@@ -397,13 +403,31 @@ Sprite_Enemy.prototype.updateBitmap = function() {
 	let isChanged = (this._battlerName !== name || this._battlerHue !== hue)
     ATB.Sprite_Enemy_prototype_updateBitmap.call(this);
 	if (isChanged){
-		this.startEffect('appear');
+		this._waitToAppear = true;
+		//this.startEffect('appear');
 	}
+};
+
+Sprite_Enemy.prototype.setupEffect = function() {
+    if (this._appeared && this._enemy.isEffectRequested()) {
+        this.startEffect(this._enemy.effectType());
+        this._enemy.clearEffect();
+    }
+    if ((this._waitToAppear || (!this._appeared && this._enemy.isAlive())) && this._effectDuration === 0) { //effectDuration === 0 to make sure collapse has ended
+		console.log('APPEAR')
+		this.startEffect('appear');
+		this._waitToAppear = false;
+    } else if (this._appeared && this._enemy.isHidden()) {
+        this.startEffect('disappear');
+    }
 };
 
 ATB.Sprite_Enemy_prototype_updateEffect = Sprite_Enemy.prototype.updateEffect;
 Sprite_Enemy.prototype.updateEffect = function() {
 	ATB.Sprite_Enemy_prototype_updateEffect.call(this);
+	if (this._effectType == 'collapse'){
+	console.log("Enemy" + this._enemy._atbEnemyId + ":" + this._effectDuration)
+	}
 };
 
 ATB.Game_Actor_setup = Game_Actor.prototype.setup
@@ -818,6 +842,17 @@ Scene_Battle.prototype.changeInputWindow = function() {
 
 ///===ATB_Gauge===///
 
+// ATB.Spriteset_Battle_prototype_update = Spriteset_Battle.prototype.update
+// Spriteset_Battle.prototype.update = function(){
+// 	ATB.Spriteset_Battle_prototype_update.call(this);
+// 	for (i in $gameTroop.members()){
+// 		if (this._enemyStateIconBases[i].y == $gameTroop.members()[i].screenY()){
+// 			console.log(i + ": " + $gameTroop.members()[i].screenY() + ", " + ($gameTroop.members()[i].screenY() - this._enemySprites[i].height))
+// 			this._enemyStateIconBases[i].y = $gameTroop.members()[i].screenY() - this._enemySprites[i].height
+// 		}
+// 		//console.log(this._enemySprites[i].height)
+// 	}
+// }
 ATB.Spriteset_Battle_createLowerLayer = Spriteset_Battle.prototype.createLowerLayer;
 Spriteset_Battle.prototype.createLowerLayer = function() {
     ATB.Spriteset_Battle_createLowerLayer.call(this);
@@ -831,6 +866,7 @@ Spriteset_Battle.prototype.createLowerLayer = function() {
 	this._hudTextsNum = [];
 	this._actorStateIcons = [[], [], [], []];
 	this.createHUDEnemies();
+	//this.createEnemyStateIconBases();
 	for (i in $gameParty.battleMembers()){
 		this.createHPBase(i); //this.createHPBase(x + (Graphics.boxWidth - x) / 4 * i, y, i);
 		this.createHPBar(i);
@@ -848,7 +884,6 @@ Spriteset_Battle.prototype.createLowerLayer = function() {
 	this.createATBEnemies();
 	this.createATBMagic();
 };
-
 Spriteset_Battle.prototype.createATBBar = function(){
     this._atbBase = new Sprite_ATBBarBase("WIP_Line");
     this._battleField.addChild(this._atbBase);
@@ -1094,6 +1129,37 @@ Sprite_HPBarBase.prototype.initialize = function(picture, id){
 	this._id = id;
 }
 
+function Sprite_EnemyStateIconsBase(){
+	this.initialize.apply(this, arguments)
+}
+
+Sprite_EnemyStateIconsBase.prototype = Object.create(Sprite_Base.prototype);
+Sprite_EnemyStateIconsBase.prototype.constructor = Sprite_EnemyStateIconsBase;
+
+Sprite_EnemyStateIconsBase.prototype.initialize = function(){
+	Sprite_Base.prototype.initialize.call(this);
+	this._battler = null;
+	this.bitmap = ImageManager.loadSystem("Enemy_Icons_Base");
+	
+    this.anchor.x = 0.5;
+    // this.anchor.y = 0.5;
+}
+
+
+Sprite_EnemyStateIconsBase.prototype.setup = function(battler){
+	this._battler = battler;
+}
+
+Sprite_Enemy.prototype.updateStateSprite = function() {
+    this._stateIconSprite.y = 20-Math.round((this.bitmap.height + 40) * 0.9);
+    if (this._stateIconSprite.y < 20 - this.y) {
+        this._stateIconSprite.y = 20 - this.y;
+    }
+	for (let i = 0; i < 4; i++){
+		this._stateIcons[i].refresh()
+	}
+};
+
 function Sprite_HPBar(){
 	this.initialize.apply(this, arguments)
 }
@@ -1259,27 +1325,100 @@ Sprite_HUDName.prototype.initialize = function(id, base){
 	this.bitmap.drawText(this._name, 0, 0, this.bitmap.width, this.bitmap.height, 'center');
 }
 
+function Sprite_ATBStateIcon(){
+	this.initialize.apply(this, arguments);
+}
+
+Sprite_ATBStateIcon.prototype = Object.create(Sprite.prototype);
+Sprite_ATBStateIcon.prototype.constructor = Sprite_ATBStateIcon;
+
+Sprite_ATBStateIcon.prototype.initialize = function(prior){
+	Sprite.prototype.initialize.call(this, new Bitmap(Graphics.width, Graphics.height));
+	// this._id = id;
+	// this._base = base;
+	this._prior = prior;
+	// this.x = base.x + 98 + 31 * prior;
+	// this.y = base.y + 93
+	this.bitmap = ImageManager.loadSystem('IconSet');
+	this.refresh();
+}
+
+Sprite_ATBStateIcon.prototype.refresh = function(){
+	// var actor = $gameParty.battleMembers()[this._id]
+	// var iconIndex = actor.allIcons()[this._prior];
+    // var pw = Window_Base._iconWidth;
+    // var ph = Window_Base._iconHeight;
+	// var sx = iconIndex % 16 * pw;
+	// var sy = Math.floor(iconIndex / 16) * ph;
+	// this.setFrame(sx, sy, pw, ph);
+}
+
 function Sprite_ActorStateIcon(){
 	this.initialize.apply(this, arguments);
 }
 
-Sprite_ActorStateIcon.prototype = Object.create(Sprite.prototype);
+Sprite_ActorStateIcon.prototype = Object.create(Sprite_ATBStateIcon.prototype);
 Sprite_ActorStateIcon.prototype.constructor = Sprite_ActorStateIcon;
 
 Sprite_ActorStateIcon.prototype.initialize = function(id, base, prior){
-	Sprite.prototype.initialize.call(this, new Bitmap(Graphics.width, Graphics.height));
 	this._id = id;
+	Sprite_ATBStateIcon.prototype.initialize.call(this, prior);
 	this._base = base;
-	this._prior = prior;
 	this.x = base.x + 98 + 31 * prior;
 	this.y = base.y + 93
-	this.bitmap = ImageManager.loadSystem('IconSet');
-	this.refresh();
+	// this._id = id;
+	// this._base = base;
+	// this._prior = prior;
+	// this.x = base.x + 98 + 31 * prior;
+	// this.y = base.y + 93
+	// this.bitmap = ImageManager.loadSystem('IconSet');
+	// this.refresh();
 }
 
 Sprite_ActorStateIcon.prototype.refresh = function(){
 	var actor = $gameParty.battleMembers()[this._id]
 	var iconIndex = actor.allIcons()[this._prior];
+    var pw = Window_Base._iconWidth;
+    var ph = Window_Base._iconHeight;
+	var sx = iconIndex % 16 * pw;
+	var sy = Math.floor(iconIndex / 16) * ph;
+	this.setFrame(sx, sy, pw, ph);
+}
+
+function Sprite_EnemyStateIcon(){
+	this.initialize.apply(this, arguments);
+}
+
+Sprite_EnemyStateIcon.prototype = Object.create(Sprite_ATBStateIcon.prototype);
+Sprite_EnemyStateIcon.prototype.constructor = Sprite_EnemyStateIcon;
+
+Sprite_EnemyStateIcon.prototype.initialize = function(base, prior){
+	this._base = base;
+	Sprite_ATBStateIcon.prototype.initialize.call(this, prior);
+	//this._enemy = enemy;
+	// this._prior = prior;
+	// this.x = base.x + 31 * prior;
+	// this.y = base.y
+	// this.bitmap = ImageManager.loadSystem('IconSet');
+	// this.refresh();
+}
+
+
+Sprite_EnemyStateIcon.prototype.setup = function(enemy){
+	this._enemy = enemy;
+	this.refresh();
+}
+
+
+Sprite_EnemyStateIcon.prototype.refresh = function(){
+	//var enemy = $gameTroop.members()[this._id]
+	this.x = this._base.x - 31 * 2 + 31 * this._prior;
+	this.y = this._base.y;
+	if (this._enemy){
+	var iconIndex = this._enemy.allIcons()[this._prior];
+	} else {
+		var iconIndex = 0;
+	}
     var pw = Window_Base._iconWidth;
     var ph = Window_Base._iconHeight;
 	var sx = iconIndex % 16 * pw;
@@ -1318,6 +1457,27 @@ Spriteset_Battle.prototype.createHUDEnemies = function(){
 
 	}
 }
+
+
+Sprite_Enemy.prototype.createStateIconSprite = function(){
+	//console.log(this);
+	this._stateIconSprite = new Sprite_EnemyStateIconsBase();
+	//this._stateIconSprite.opacity = this._appeared ? 255 : 0;
+	this._stateIcons = [];
+	this.addChild(this._stateIconSprite);
+	for (let i = 0; i < 4; i++){
+		this._stateIcons.push(new Sprite_EnemyStateIcon(this._stateIconSprite, i));
+		this.addChild(this._stateIcons[i]);
+	}
+}
+
+ATB.Sprite_Enemy_prototype_setBattler = Sprite_Enemy.prototype.setBattler;
+Sprite_Enemy.prototype.setBattler = function(battler) {
+    ATB.Sprite_Enemy_prototype_setBattler.call(this, battler);
+	for (let i = 0; i < 4; i++){
+    	this._stateIcons[i].setup(battler);
+	}
+};
 
 function Sprite_HUDEnemy(){
 	this.initialize.apply(this, arguments);
