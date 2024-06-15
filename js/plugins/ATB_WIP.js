@@ -41,7 +41,53 @@
  * @desc default animation when battler is preparing an attack
  * @default 122
  * 
+ * @param shake_if_enemy_is_hit
+ * @text Shake if enemy is hit?
+ * @type boolean
+ * @desc If true, screen shakes if enemy is hit.
+ * @default true
+ * 
+ * @param shake_power
+ * @text Shake power
+ * @type number
+ * @desc Screen shaking power if enemy is hit.
+ * @min 1
+ * @max 9
+ * @default 5
+ * 
+ * @param shake_speed
+ * @text Shake speed
+ * @type number
+ * @desc Screen shaking speed if enemy is hit.
+ * @min 1
+ * @max 9
+ * @default 5
+ * 
+ * @param shake_duration
+ * @text Shake duraion
+ * @type number
+ * @desc Screen shaking duration if enemy is hit.
+ * @min 1
+ * @default 10
+ * 
+ * @param speed_up_animation
+ * @text Speed up animation?
+ * @type boolean
+ * @desc If true, skill/item animation will be sped up by default
+ * @default true
+ * 
+ * @param speed_up_value_default
+ * @text Default speed up value
+ * @type number
+ * @desc 1 - 8x slower, 2 - 4x slower, 3 - 2x slower, 4 - normal, 5 - 2x slower, 6 - 4x slower
+ * @min 1
+ * @max 6
+ * @default 5
+ * 
  * @help
+ * Після YEP_CoreEngine
+ * Після MOG_CollapseEffects
+ * 
  * Skill 3 - Head
  * Skill 4 - Torso
  * Skill 5 - Legs
@@ -72,8 +118,15 @@ ATB.Param.AtbX = ATB.Parameters['atb_x'] || Graphics.boxWidth - 64
 ATB.Param.HudX = ATB.Parameters['hud_x'] || "Graphics.width - (2 - id % 2 ) * 250" 
 ATB.Param.HudY = ATB.Parameters['hud_y'] || "Graphics.height - (2 - Math.floor(id / 2)) * 125 - 20"
 
-
 ATB.Param.ChargeAnimation = ATB.Parameters['charge_animation'] || 122
+
+ATB.Param.ShakeIfEnemyIsHit = eval(ATB.Parameters['shake_if_enemy_is_hit']);
+ATB.Param.ShakePower = Number(ATB.Parameters['shake_power']) || 5;
+ATB.Param.ShakeSpeed = Number(ATB.Parameters['shake_speed']) || 5;
+ATB.Param.ShakeDuration = Number(ATB.Parameters['shake_duration']) || 10;
+
+ATB.Param.SpeedUpAnimation = eval(ATB.Parameters['speed_up_animation']);
+ATB.Param.SpeedUpValueDefault = Number(ATB.Parameters['speed_up_value_default']) || 5;
 
  
 function doPathExist(path_to_file){
@@ -390,6 +443,15 @@ Game_Enemy.prototype.transform = function(enemyId) {
 
 };
 
+//Shake screen if enemy is hit
+ATB.Game_Enemy_prototype_performDamage = Game_Enemy.prototype.performDamage;
+Game_Enemy.prototype.performDamage = function() {
+    ATB.Game_Enemy_prototype_performDamage.call(this);
+	if (ATB.Param.ShakeIfEnemyIsHit){
+    	$gameScreen.startShake(ATB.Param.ShakePower, ATB.Param.ShakeSpeed, ATB.Param.ShakeDuration);
+	}
+};
+
 ATB.Sprite_Enemy_prototype_initMembers = Sprite_Enemy.prototype.initMembers
 Sprite_Enemy.prototype.initMembers = function() {
     ATB.Sprite_Enemy_prototype_initMembers.call(this);
@@ -414,7 +476,7 @@ Sprite_Enemy.prototype.setupEffect = function() {
         this._enemy.clearEffect();
     }
     if ((this._waitToAppear || (!this._appeared && this._enemy.isAlive())) && this._effectDuration === 0) { //effectDuration === 0 to make sure collapse has ended
-		console.log('APPEAR')
+		//console.log('APPEAR')
 		this.startEffect('appear');
 		this._waitToAppear = false;
     } else if (this._appeared && this._enemy.isHidden()) {
@@ -422,13 +484,13 @@ Sprite_Enemy.prototype.setupEffect = function() {
     }
 };
 
-ATB.Sprite_Enemy_prototype_updateEffect = Sprite_Enemy.prototype.updateEffect;
-Sprite_Enemy.prototype.updateEffect = function() {
-	ATB.Sprite_Enemy_prototype_updateEffect.call(this);
-	if (this._effectType == 'collapse'){
-	console.log("Enemy" + this._enemy._atbEnemyId + ":" + this._effectDuration)
-	}
-};
+// ATB.Sprite_Enemy_prototype_updateEffect = Sprite_Enemy.prototype.updateEffect;
+// Sprite_Enemy.prototype.updateEffect = function() {
+// 	ATB.Sprite_Enemy_prototype_updateEffect.call(this);
+// 	if (this._effectType == 'collapse'){
+// 	console.log("Enemy" + this._enemy._atbEnemyId + ":" + this._effectDuration)
+// 	}
+// };
 
 ATB.Game_Actor_setup = Game_Actor.prototype.setup
 Game_Actor.prototype.setup = function(actorId) {
@@ -530,6 +592,83 @@ BattleManager.displayEscapeFailureMessage = function() {
 };
 
 Window_BattleLog.prototype.addText = function(text) {
+};
+
+//Чому анімація у Window_BattleLog???
+//Тут читається нотатка використаної навички/речі та визначається прискорення
+Window_BattleLog.prototype.startAction = function(subject, action, targets) {
+    var item = action.item();
+	var rate = item.meta['Speed Up Value'];
+	var isDefaultSpeedUp = (item.meta['Speed ​​Up Animation'] && item.meta['Speed ​​Up Animation'].match('true'))
+	isDefaultSpeedUp = isDefaultSpeedUp || ATB.Param.SpeedUpAnimation
+	isDefaultSpeedUp = isDefaultSpeedUp && !(item.meta['Speed ​​Up Animation'] && item.meta['Speed ​​Up Animation'].match('false'))
+
+	if (rate) {
+		rate = rate.replace(/ /g, '')
+	} else if (isDefaultSpeedUp){
+		rate = ATB.Param.SpeedUpValueDefault;
+	} else {
+		rate = 4;
+	}
+    this.push('performActionStart', subject, action);
+    this.push('waitForMovement');
+    this.push('performAction', subject, action);
+    this.push('showAnimation', subject, targets.clone(), item.animationId, rate);
+    this.displayAction(subject, item);
+};
+
+//Просто перенос rate
+Window_BattleLog.prototype.showAnimation = function(subject, targets, animationId, rate) {
+    if (animationId < 0) {
+        this.showAttackAnimation(subject, targets, rate);
+    } else {
+        this.showNormalAnimation(targets, animationId, false, rate);
+    }
+};
+
+//Просто перенос rate
+Window_BattleLog.prototype.showAttackAnimation = function(subject, targets, rate) {
+    if (subject.isActor()) {
+        this.showActorAttackAnimation(subject, targets, rate);
+    } else {
+        this.showEnemyAttackAnimation(subject, targets);
+    }
+};
+
+//Просто перенос rate
+Window_BattleLog.prototype.showActorAttackAnimation = function(subject, targets, rate) {
+    this.showNormalAnimation(targets, subject.attackAnimationId1(), false, rate);
+    this.showNormalAnimation(targets, subject.attackAnimationId2(), true, rate);
+};
+
+//Просто перенос rate
+Window_BattleLog.prototype.showNormalAnimation = function(targets, animationId, mirror, rate) {
+	if (Yanfly && Yanfly.Core){
+		var animation = $dataAnimations[animationId];
+		if (animation) {
+		  if (animation.position === 3) {
+			targets.forEach(function(target) {
+				target.startAnimation(animationId, mirror, 0, rate);
+			});
+		  } else {
+			  var delay = this.animationBaseDelay();
+			  var nextDelay = this.animationNextDelay();
+			  targets.forEach(function(target) {
+				  target.startAnimation(animationId, mirror, delay, rate);
+				  delay += nextDelay;
+			  });
+		  }
+		}
+	}
+    var animation = $dataAnimations[animationId];
+    if (animation) {
+        var delay = this.animationBaseDelay();
+        var nextDelay = this.animationNextDelay();
+        targets.forEach(function(target) {
+            target.startAnimation(animationId, mirror, delay, rate);
+            delay += nextDelay;
+        });
+    }
 };
 
 //ATB.BattleManager_update = BattleManager.update;
@@ -1853,6 +1992,66 @@ Sprite_Battler.prototype.stopChargeAnimation = function() {
 	for (var i = 0; i < sprites.length; i++) {
 		sprites[i].remove();
 	}
+};
+
+//Просто перенос rate
+Sprite_Battler.prototype.setupAnimation = function() {
+    while (this._battler.isAnimationRequested()) {
+        var data = this._battler.shiftAnimation();
+        var animation = $dataAnimations[data.animationId];
+        var mirror = data.mirror;
+        var delay = animation.position === 3 ? 0 : data.delay;
+        this.startAnimation(animation, mirror, delay, data.rate);
+        for (var i = 0; i < this._animationSprites.length; i++) {
+            var sprite = this._animationSprites[i];
+            sprite.visible = this._battler.isSpriteVisible();
+        }
+    }
+};
+
+//Просто перенос rate
+Game_Battler.prototype.startAnimation = function(animationId, mirror, delay, rate) {
+    var data = { animationId: animationId, mirror: mirror, delay: delay, rate: rate };
+    this._animations.push(data);
+};
+
+//Просто перенос rate
+Sprite_Base.prototype.startAnimation = function(animation, mirror, delay, rate) {
+    var sprite = new Sprite_Animation();
+    sprite.setup(this._effectTarget, animation, mirror, delay, rate);
+    this.parent.addChild(sprite);
+    this._animationSprites.push(sprite);
+};
+
+//Просто перенос rate
+Game_Actor.prototype.startAnimation = function(animationId, mirror, delay, rate) {
+    mirror = !mirror;
+    Game_Battler.prototype.startAnimation.call(this, animationId, mirror, delay, rate);
+};
+
+//Просто перенос rate
+Sprite_Animation.prototype.setup = function(target, animation, mirror, delay, rate) {
+    this._target = target;
+    this._animation = animation;
+    this._mirror = mirror;
+    this._delay = delay;
+    if (this._animation) {
+        this.remove();
+        this.setupRate(rate);
+        this.setupDuration();
+        this.loadBitmaps();
+        this.createSprites();
+    }
+};
+
+//Ось тут уже механіка rate
+Sprite_Animation.prototype.setupRate = function(rate) {
+	if (rate){
+		this._rate = 32 / 2 ** (rate - 1)
+	} else {
+    	this._rate = 4;
+	}
+	console.log(this._rate)
 };
 
 function Sprite_ChargeAnimation() {
