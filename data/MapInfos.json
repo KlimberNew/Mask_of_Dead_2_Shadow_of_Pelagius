@@ -192,10 +192,10 @@ null,
 {"id":190,"expanded":false,"name":"{Лаборатория Влур-Стига}","order":171,"parentId":186,"scrollX":742.8,"scrollY":418.2,"quick":false},
 {"id":191,"expanded":false,"name":"{61.2 Лабиринт(ОбстрелЛордами)}","order":175,"parentId":173,"scrollX":742.8,"scrollY":418.2,"quick":false},
 {"id":192,"expanded":true,"name":"----------Глава 6------------------","order":192,"parentId":0,"scrollX":0,"scrollY":0,"quick":false},
-{"id":193,"expanded":true,"name":"{64 Лаборатория Влур-Стига}","order":193,"parentId":192,"scrollX":742.8,"scrollY":418.2,"quick":false},
-{"id":194,"expanded":false,"name":"{65 Победа над Влур-Стигом}","order":194,"parentId":193,"scrollX":742.8,"scrollY":418.2,"quick":false},
-{"id":195,"expanded":true,"name":"{66 Окресности Лаборатории}","order":195,"parentId":192,"scrollX":742.8,"scrollY":418.2,"quick":false},
-null,
-{"id":197,"expanded":true,"name":"----------Глава 7------------------","order":196,"parentId":0,"scrollX":742.8,"scrollY":418.2,"quick":false},
-{"id":198,"expanded":true,"name":"{(Подзагрузка 7-й главы)}","order":197,"parentId":197,"scrollX":742.8,"scrollY":418.2,"quick":false}
+{"id":193,"expanded":true,"name":"{64 Лаборатория Влур-Стига}","order":193,"parentId":192,"scrollX":675.2727272727273,"scrollY":380.1818181818182,"quick":false},
+{"id":194,"expanded":false,"name":"{65 Победа над Влур-Стигом}","order":194,"parentId":193,"scrollX":684,"scrollY":418.3636363636364,"quick":false},
+{"id":195,"expanded":true,"name":"{66 Окресности Лаборатории}","order":196,"parentId":192,"scrollX":675.2727272727273,"scrollY":380.1818181818182,"quick":false},
+{"id":196,"expanded":false,"name":"{Преступление Рикарда}","order":195,"parentId":193,"scrollX":675.2727272727273,"scrollY":380.1818181818182,"quick":false},
+{"id":197,"expanded":true,"name":"----------Глава 7------------------","order":197,"parentId":0,"scrollX":742.8,"scrollY":418.2,"quick":false},
+{"id":198,"expanded":true,"name":"{(Подзагрузка 7-й главы)}","order":198,"parentId":197,"scrollX":742.8,"scrollY":418.2,"quick":false}
 ]
