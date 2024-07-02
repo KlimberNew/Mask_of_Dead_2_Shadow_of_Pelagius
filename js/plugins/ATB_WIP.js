@@ -101,6 +101,8 @@
  * hud_x: id * 230
  * hud_y: Graphics.height - 145
  * 
+ * <DamageFace: 'Назва файлу'> - динамічні обличчя при різних HP% (ActorDamageFaces)
+ * 
  * Слава Україні! :3
  * 
  */
@@ -326,6 +328,40 @@ Game_Enemy.prototype.makeActions = function() {
 	}
 }
 
+//Щоб не ламалося, коли хтось покидає партію під час бою
+ATB.Game_Party_prototype_removeActor = Game_Party.prototype.removeActor;
+Game_Party.prototype.removeActor = function(actorId) {
+    if (this._actors.contains(actorId)) {
+        if (this.inBattle()){
+			let spriteset = BattleManager._spriteset
+			let index = this._actors.indexOf(actorId)
+			BattleManager._battlersTurns.splice(index, 1);
+
+			spriteset.deleteInfo(index, spriteset._hpBases, 0);
+			spriteset.deleteInfo(index, spriteset._atbActors, 0);			
+			BattleManager._spriteset._hpBases.splice(index, 1);
+			BattleManager._spriteset._atbActors.splice(index, 1);
+		}
+    }
+	ATB.Game_Party_prototype_removeActor.call(this, actorId);
+};
+
+//Щоб не ламалося, коли хтось приєднується
+ATB.Game_Party_prototype_addActor = Game_Party.prototype.addActor;
+Game_Party.prototype.addActor = function(actorId) {
+	if (!this._actors.contains(actorId)) {
+		ATB.Game_Party_prototype_addActor.call(this, actorId);
+        if (this.inBattle()){
+			let spriteset = BattleManager._spriteset
+			let index = this._actors.indexOf(actorId)
+			BattleManager._battlersTurns.splice(index, 0, [$gameActors.actor(actorId), ATB.Param.Base, false]);
+			let id = $gameParty.battleMembers().length - 1;
+			spriteset.createActorHUD(id);
+			spriteset.createATBActor(id);
+		}
+    }
+};
+
 BattleManager.selectNextCommand = function() {
 	this._playerTurn = false;
 	this._phase = 'turn'
@@ -336,7 +372,7 @@ BattleManager.selectNextCommand = function() {
 				this.changeActor(this._activeActor, 'waiting');
 			} else {
 				this.subject = $gameParty.battleMembers()[this._actorIndex]
-				this.changeActor(this._actorIndex + this._actorsLength, 'waiting');
+				this.changeActor(this._actorIndex + $gameParty.battleMembers().length, 'waiting');
 			}
             if (this._actorIndex >= $gameParty.size()) {//same as original
                 this.startTurn();
@@ -362,14 +398,14 @@ Game_Enemy.prototype.performCollapse = function() {
 	//spriteset.deleteInfo(this._atbEnemyId, spriteset._atbEnemies, 0)
 	spriteset._atbEnemies[this._atbEnemyId].opacity = 0;
 	this.hideHUD();
-	BattleManager._battlersTurns[this._atbEnemyId + BattleManager._actorsLength][3] = false;
+	BattleManager._battlersTurns[this._atbEnemyId + $gameParty.battleMembers().length][3] = false;
     ATB.Game_Enemy_performCollapse.apply(this)
 };
 
 ATB.Game_Enemy_onRestrict = Game_Enemy.prototype.onRestrict;
 Game_Enemy.prototype.onRestrict = function() {
     ATB.Game_Enemy_onRestrict.call(this);
-	BattleManager._battlersTurns[this._atbEnemyId + BattleManager._actorsLength][3] = false;
+	BattleManager._battlersTurns[this._atbEnemyId + $gameParty.battleMembers().length][3] = false;
 };
 
 ATB.Game_Actor_onRestrict = Game_Actor.prototype.onRestrict;
@@ -568,7 +604,7 @@ BattleManager.startBattle = function() {
 			this._slowestBattler = battlers[i];
 		}
 	}
-	this._actorsLength = $gameParty.battleMembers().length
+	//$gameParty.battleMembers().length = $gameParty.battleMembers().length
 	$gameTroop.makeActions();
 	this.refreshStatus();
 	this._activeActor = null;
@@ -696,12 +732,12 @@ BattleManager.update = function() {
 		}
     }
 	for (i = 0; i < this._battlersTurns.length; i++){
-		if (!(this._playerTurn && i < this._actorsLength) && this._phase == 'turn' && !this._isAction && !this._isEnemySubject){
+		if (!(this._playerTurn && i < $gameParty.battleMembers().length) && this._phase == 'turn' && !this._isAction && !this._isEnemySubject){
 			if (!this._battlersTurns[i][3]){
 				this._battlersTurns[i][1] = this._battlersTurns[i][1] - this._battlersTurns[i][0].agi / ATB.Param.Divider;
 			} else {
 				this._battlersTurns[i][1] = this._battlersTurns[i][1] - ATB.Param.Base / this._battlersTurns[i][0].currentAction().item().speed / ATB.Param.Divider;
-				if (!(i < this._actorsLength && this.isActorAnimationPlaying(i)) && !(i >= this._actorsLength && this.isEnemyAnimationPlaying(i - this._actorsLength)) && !this._spriteset.isBusy()){
+				if (!(i < $gameParty.battleMembers().length && this.isActorAnimationPlaying(i)) && !(i >= $gameParty.battleMembers().length && this.isEnemyAnimationPlaying(i - $gameParty.battleMembers().length)) && !this._spriteset.isBusy()){
 					this._battlersTurns[i][0].clearAnimations();
 					if (this._battlersTurns[i][0].currentAction().item().meta["Charge Animation"]){
 						let animationId = this._battlersTurns[i][0].currentAction().item().meta["Charge Animation"].replace(/ /g, '');
@@ -717,18 +753,18 @@ BattleManager.update = function() {
 				}
 				this._battlersTurns[i][2] = true;
 				this._battlersTurns[i][1] = ATB.Param.Base;
-				if (i < this._actorsLength){
+				if (i < $gameParty.battleMembers().length){
 					this._playerTurn = true;
 					this._subject = $gameParty.battleMembers()[i];
 					this._activeActor = i;
 					this._isAction = true;
 				} else {
-					if ($gameTroop.members()[i - this._actorsLength].isAlive()){
+					if ($gameTroop.members()[i - $gameParty.battleMembers().length].isAlive()){
 						if (!this._isEnemySubject){
-							this._subject = $gameTroop.members()[i - this._actorsLength];
+							this._subject = $gameTroop.members()[i - $gameParty.battleMembers().length];
 							this._isEnemySubject = true;
 						} else {
-							this._actionEnemies.push($gameTroop.members()[i - this._actorsLength]);
+							this._actionEnemies.push($gameTroop.members()[i - $gameParty.battleMembers().length]);
 						}
 					}
 				}
@@ -759,7 +795,7 @@ BattleManager.update = function() {
 			}
 
 		}
-		this._battlersTurns[this._subject.index() + this._actorsLength][2] = true;
+		this._battlersTurns[this._subject.index() + $gameParty.battleMembers().length][2] = true;
 	}
 };
 
@@ -800,21 +836,22 @@ BattleManager.startB = function() {
 
 BattleManager.processTurn = function() {
 	var subject = this._subject;
-	if (subject.isEnemy() && this._battlersTurns[subject.index() + this._actorsLength][2] || 
-	subject.isActor() && this._battlersTurns[subject.index()][2]){
+	//subject.index() > -1 - щоб впевнитися, що не покинули партію
+	if (subject.index() > -1 && subject.isEnemy() && this._battlersTurns[subject.index() + $gameParty.battleMembers().length][2] || 
+	subject.index() > -1 && subject.isActor() && this._battlersTurns[subject.index()][2]){
 		var action = subject.currentAction();
 		if (action) {
 			if (action.isValid()) {
 				if ((subject.isActor() && this._battlersTurns[subject.index()][3]) ||
-				(subject.isEnemy() && this._battlersTurns[subject.index() + this._actorsLength][3])){
-					if (subject.isEnemy() && this._battlersTurns[subject.index() + this._actorsLength][3]){
+				(subject.isEnemy() && this._battlersTurns[subject.index() + $gameParty.battleMembers().length][3])){
+					if (subject.isEnemy() && this._battlersTurns[subject.index() + $gameParty.battleMembers().length][3]){
 						
 						this.startAction();
 						subject._turnCount++;
 						subject.removeCurrentAction();
-						this._battlersTurns[subject.index() + this._actorsLength][2] = false;
-						this._battlersTurns[subject.index() + this._actorsLength][3] = false;
-						this._battlersTurns[subject.index() + this._actorsLength][1] = ATB.Param.Base;
+						this._battlersTurns[subject.index() + $gameParty.battleMembers().length][2] = false;
+						this._battlersTurns[subject.index() + $gameParty.battleMembers().length][3] = false;
+						this._battlersTurns[subject.index() + $gameParty.battleMembers().length][1] = ATB.Param.Base;
 					}
 				} else {
 					var speed = action.item().speed;
@@ -827,8 +864,8 @@ BattleManager.processTurn = function() {
 							this._battlersTurns[subject.index()][3] = true;
 							this._battlersTurns[subject.index()][2] = false;
 						} else {
-							this._battlersTurns[subject.index() + this._actorsLength][3] = true;
-							this._battlersTurns[subject.index() + this._actorsLength][2] = false;
+							this._battlersTurns[subject.index() + $gameParty.battleMembers().length][3] = true;
+							this._battlersTurns[subject.index() + $gameParty.battleMembers().length][2] = false;
 						}
 						this._phase = 'turn';
 						this._subject = null;
@@ -844,7 +881,7 @@ BattleManager.processTurn = function() {
 				subject.removeCurrentAction();
 			}
 			if (subject.isEnemy()){
-				this._battlersTurns[subject.index() + this._actorsLength][2] = false;
+				this._battlersTurns[subject.index() + $gameParty.battleMembers().length][2] = false;
 				this._isEnemySubject = false;
 			}
 			$gameTroop.makeActions();
@@ -862,21 +899,6 @@ BattleManager.processTurn = function() {
 	}
 
 };
-BattleManager.refreshHpBars = function(){
-	this._spriteset._hpGauges.forEach(i => i.refresh());
-}
-BattleManager.refreshMpBars = function(){
-	this._spriteset._mpGauges.forEach(i => i.refresh());
-}
-BattleManager.refreshTpBars = function(){
-	this._spriteset._tpGauges.forEach(i => i.refresh());
-}
-BattleManager.refreshTextOnBars = function(){
-	this._spriteset._hudTextsNum.forEach(i => i.refresh());
-}
-BattleManager.refreshIcons = function(){
-	this._spriteset._actorStateIcons.forEach(i => i.forEach(j => j.refresh()));
-}
 BattleManager.endAction = function() {
 	this._logWindow.endAction(this._subject);
 	this._isAction = false;
@@ -922,7 +944,9 @@ BattleManager.updateTurnEnd = function() {
 BattleManager.startInput = function() {
     this._phase = 'input';
 	this._subject = $gameParty.battleMembers()[this._activeActor];
+	if (this._subject){ //на випадок, якщо покине партію
 	this._subject.makeActions();
+	}
     $gameTroop.makeActions();
     this.clearActor();
     if (this._surprise || !$gameParty.canInput()) {
@@ -966,7 +990,12 @@ Scene_Battle.prototype.changeInputWindow = function() {
 			this.changeCommandPosition();
             this.startActorCommandSelection();
         } else {
-			if ($gameParty.battleMembers()[BattleManager._activeActor].canInput()){
+			if (!$gameParty.battleMembers()[BattleManager._activeActor]){ // на випадок, якщо покине команду
+				BattleManager._activeActor = null;
+				BattleManager._playerTurn = false;
+				BattleManager._isAction = false;
+				BattleManager.startTurn();
+			} else if ($gameParty.battleMembers()[BattleManager._activeActor].canInput()){
 				BattleManager.changeActor(BattleManager._activeActor, 'undecided');
 				this.changeCommandPosition();
 				this.startActorCommandSelection();
@@ -996,30 +1025,15 @@ ATB.Spriteset_Battle_createLowerLayer = Spriteset_Battle.prototype.createLowerLa
 Spriteset_Battle.prototype.createLowerLayer = function() {
     ATB.Spriteset_Battle_createLowerLayer.call(this);
 	this._hpBases = [];
-	this._hpGauges = [];
-	this._mpGauges = [];
-	this._tpGauges = [];
-	this._hudFaces = [];
-	this._hudNames = [];
-	this._hudTexts = [];
-	this._hudTextsNum = [];
-	this._actorStateIcons = [[], [], [], []];
+	this._atbActors = [];
 	this.createHUDEnemies();
-	//this.createEnemyStateIconBases();
 	for (i in $gameParty.battleMembers()){
-		this.createHPBase(i); //this.createHPBase(x + (Graphics.boxWidth - x) / 4 * i, y, i);
-		this.createHPBar(i);
-		this.createMPBar(i);
-		this.createTPBar(i);
-		this.createHUDFace(i);
-		this.createHUDName(i);
-		this.createHUDText(i);
-		for (j = 0; j < 4; j++){
-			this.createActorStateIcon(i, j);
-		}
+		this.createActorHUD(i);
 	}
 	this.createATBBar();
-	this.createATBActor();
+	for (i in $gameParty.battleMembers()){
+		this.createATBActor(i);
+	}
 	this.createATBEnemies();
 	this.createATBMagic();
 };
@@ -1028,19 +1042,16 @@ Spriteset_Battle.prototype.createATBBar = function(){
     this._battleField.addChild(this._atbBase);
 }
 
-Spriteset_Battle.prototype.createATBActor = function(){
-	this._atbActors = [];
-	for (i in $gameParty.battleMembers()){
-		id = $gameParty._actors[i]
-		if (doPathExist("img/system/Actor_" + id + ".png")){
-			filename = "Actor_" + id;
-		} else{		
-			filename = "Actor_N"
-		}
-		this._atbActors.push(new Sprite_ATBActor(filename, this._atbBase, i));
-		this._battleField.addChild(this._atbActors[i]);
-		$gameParty.battleMembers()[i].setAtbActor(i)
+Spriteset_Battle.prototype.createATBActor = function(id){
+	actorId = $gameParty._actors[id]
+	if (doPathExist("img/system/Actor_" + actorId + ".png")){
+		filename = "Actor_" + actorId;
+	} else{		
+		filename = "Actor_N"
 	}
+	this._atbActors.push(new Sprite_ATBActor(filename, this._atbBase, id));
+	this._battleField.addChild(this._atbActors[id]);
+	$gameParty.battleMembers()[id].setAtbActor(id)
 }
 
 Spriteset_Battle.prototype.createATBEnemies = function(){
@@ -1139,11 +1150,11 @@ Sprite_ATBEnemy.prototype.update = function(){
 	if (this._atbBase != undefined && BattleManager._battlersTurns != undefined 
 	&& BattleManager._battlersTurns.length == $gameParty.battleMembers().length + $gameTroop.members().length){
 		this.x = this._atbBase.x + 50;
-		if (BattleManager._battlersTurns[this._id + BattleManager._actorsLength][1] == ATB.Param.Base){
+		if (BattleManager._battlersTurns[this._id + $gameParty.battleMembers().length][1] == ATB.Param.Base){
 			this.y = 0;
 			this.x = this._atbBase.x + 4;
 		} else {
-			this.y = this._atbBase.height / ATB.Param.Base * (BattleManager._battlersTurns[this._id + BattleManager._actorsLength][1])
+			this.y = this._atbBase.height / ATB.Param.Base * (BattleManager._battlersTurns[this._id + $gameParty.battleMembers().length][1])
 		}
 		
 	}
@@ -1205,14 +1216,26 @@ Sprite_ATBMagic.prototype.update = function(){
 
 ///HUD
 
+Spriteset_Battle.prototype.createActorHUD = function(id){
+	this.createHPBase(id); //this.createHPBase(x + (Graphics.boxWidth - x) / 4 * i, y, i);
+	this.createHPBar(id);
+	this.createMPBar(id);
+	this.createTPBar(id);
+	this.createHUDFace(id);
+	this.createHUDName(id);
+	this.createHUDText(id);
+	for (j = 0; j < 4; j++){
+		this.createActorStateIcon(id, j);
+	}
+}
 Spriteset_Battle.prototype.createHPBase = function(id){
     this._hpBases.push(new Sprite_HPBarBase("WIP_HP_Actor_Bar", id));
     this._battleField.addChild(this._hpBases[id]);
 }
 
 Spriteset_Battle.prototype.createHPBar = function(id){
-	this._hpGauges.push(new Sprite_HPBar(this._hpBases[id]))
-	this._battleField.addChild(this._hpGauges[id])
+	hpGauge = new Sprite_HPBar(this._hpBases[id])
+	this._hpBases[id].addChild(hpGauge)
 }
 
 textcolor = function(n){
@@ -1222,35 +1245,35 @@ textcolor = function(n){
 	return windowskin.getPixel(px, py);
 }
 Spriteset_Battle.prototype.createMPBar = function(id){
-	this._mpGauges.push(new Sprite_MPBar(this._hpBases[id]));
-    this._battleField.addChild(this._mpGauges[id]);
+	mpGauge = new Sprite_MPBar(this._hpBases[id]);
+    this._hpBases[id].addChild(mpGauge);
 }
 
 Spriteset_Battle.prototype.createTPBar = function(id){
-	this._tpGauges.push(new Sprite_TPBar(this._hpBases[id]));
-    this._battleField.addChild(this._tpGauges[id]);
+	tpGauge = new Sprite_TPBar(this._hpBases[id]);
+    this._hpBases[id].addChild(tpGauge);
 }
 
 Spriteset_Battle.prototype.createHUDFace = function(id){
-	this._hudFaces.push(new Sprite_HUDFace($gameParty.battleMembers()[id]._faceName, $gameParty.battleMembers()[id]._faceIndex, this._hpBases[id]));
-	this._battleField.addChild(this._hudFaces[id]);
+	hudFace = new Sprite_HUDFace($gameParty.battleMembers()[id], id, this._hpBases[id]);
+	this._hpBases[id].addChild(hudFace);
 }
 
 Spriteset_Battle.prototype.createHUDName = function(id){
-	this._hudNames.push(new Sprite_HUDName(id, this._hpBases[id]));
-	this._battleField.addChild(this._hudNames[id]);
+	hudName = new Sprite_HUDName(id, this._hpBases[id]);
+	this._hpBases[id].addChild(hudName);
 }
 
 Spriteset_Battle.prototype.createHUDText = function(id){
-	this._hudTexts.push(new Sprite_TextOnBars(this._hpBases[id]));
-	this._battleField.addChild(this._hudTexts[id]);
-	this._hudTextsNum.push(new Sprite_TextOnBarsNum(this._hpBases[id]));
-	this._battleField.addChild(this._hudTextsNum[id]);
+	hudText = new Sprite_TextOnBars(this._hpBases[id]);
+	this._hpBases[id].addChild(hudText);
+	hudTextNum = new Sprite_TextOnBarsNum(this._hpBases[id]);
+	this._hpBases[id].addChild(hudTextNum);
 }
 
 Spriteset_Battle.prototype.createActorStateIcon = function(id, prior){
-	this._actorStateIcons[prior].push(new Sprite_ActorStateIcon(id, this._hpBases[id], prior));
-	this._battleField.addChild(this._actorStateIcons[prior][id]);
+	actorStateIcon = new Sprite_ActorStateIcon(id, this._hpBases[id], prior);
+	this._hpBases[id].addChild(actorStateIcon);
 }
 
 function Sprite_HPBarBase(){
@@ -1266,6 +1289,10 @@ Sprite_HPBarBase.prototype.initialize = function(picture, id){
 	this.x = eval(ATB.Param.HudX);
 	this.y = eval(ATB.Param.HudY);
 	this._id = id;
+}
+
+Sprite_HPBarBase.prototype.refresh = function(){
+	this.children.forEach(i => i.refresh());
 }
 
 function Sprite_EnemyStateIconsBase(){
@@ -1311,8 +1338,8 @@ Sprite_HPBar.prototype.initialize = function(base){
 	this.base = base;
 	this.bitmap = new Bitmap(125,36);
 	this.bitmap.gradientFillRect(0,18,this.bitmap.width,18,textcolor(20), textcolor(21));
-	this.x = this.base.x + 100;
-	this.y = this.base.y + 10 - 18;
+	this.x = 100;
+	this.y = -8;
 	this._id = this.base._id;
 	this.refresh();
 }
@@ -1333,8 +1360,8 @@ Sprite_MPBar.prototype.initialize = function(base){
 	this.base = base;
 	this.bitmap = new Bitmap(125,36);
 	this.bitmap.gradientFillRect(0,18,this.bitmap.width,18,textcolor(22), textcolor(23));
-	this.x = this.base.x + 100;
-	this.y = this.base.y + 41 - 18;
+	this.x = 100;
+	this.y = 23;
 	this._id = this.base._id
 	this.refresh();
 }
@@ -1355,8 +1382,8 @@ Sprite_TPBar.prototype.initialize = function(base){
 	this.base = base;
 	this.bitmap = new Bitmap(123,36);
 	this.bitmap.gradientFillRect(0,18,this.bitmap.width,18,textcolor(28), textcolor(29));
-	this.x = this.base.x + 100;
-	this.y = this.base.y + 74 - 18;
+	this.x = 100;
+	this.y = 56;
 	this._id = this.base._id
 	this.refresh();
 }
@@ -1377,8 +1404,8 @@ Sprite_TextOnBars.prototype.initialize = function(base){
 	this._id = base._id;
 	this.bitmap = new Bitmap(123,108);
 	this._bitmap.fontSize = 26;
-	this.x = this.base.x + 100;
-	this.y = this.base.y + 10 - 18;
+	this.x = 100;
+	this.y = -8;
 	this.bitmap.textColor = textcolor(16);
 	this.drawText();
 }
@@ -1388,6 +1415,8 @@ Sprite_TextOnBars.prototype.drawText = function(){
 	this.bitmap.drawText(TextManager.mpA, 0, 35, this.bitmap.width, 36);
 	this.bitmap.drawText(TextManager.tpA, 0, 68, this.bitmap.width, 36);
 }
+
+Sprite_TextOnBars.prototype.refresh = function(){}
 
 function Sprite_TextOnBarsNum(){
 	this.initialize.apply(this, arguments);
@@ -1401,8 +1430,8 @@ Sprite_TextOnBarsNum.prototype.initialize = function(base){
 	this._id = base._id;
 	this.bitmap = new Bitmap(140,108);
 	this._bitmap.fontSize = 26;
-	this.x = this.base.x + 100;
-	this.y = this.base.y + 10 - 18;
+	this.x = 100;
+	this.y = -8;
 	this.drawText();
 }
 Sprite_TextOnBarsNum.prototype.refresh = function(){
@@ -1431,20 +1460,52 @@ Sprite_HUDFace.prototype.initialize = function(){
 	Sprite_Base.prototype.initialize.call(this);
 }
 
-Sprite_HUDFace.prototype.initialize = function(picture, id, base){
+Sprite_HUDFace.prototype.initialize = function(actor, id, base){
 	Sprite_Base.prototype.initialize.call(this);
 	this.base = base;
-	this._id = id
-	this.bitmap = ImageManager.loadFace(picture);
+	this._actor = actor;
+	this._id = id;
+	console.log(this._id)
+	this._isDynamic = this._actor.actor().meta['DamageFace'];
+	if (this._isDynamic){
+		this.redrawDynamicFace();
+	} else {
+		this.redrawFace();
+	}
 	this._maskSprite = new Sprite()
 	this.addChild(this._maskSprite);
-	this.setFrame(id % 4 * 144, Math.floor(id / 4) * 144, 144, 144);
 	this.scale.x = 98 / 144;
 	this.scale.y = 96 / 144;
-	this.x += this.base.x;
-	this.y += this.base.y;
+	//this.x += this.base.x;
+	//this.y += this.base.y;
 	this._maskSprite.bitmap = ImageManager.loadSystem("Mask1")
 	this.mask = this._maskSprite;
+}
+
+Sprite_HUDFace.prototype.update = function(){
+	Sprite_Base.prototype.update.call(this);
+	if (!this._isDynamic && (this._faceName != this._actor._faceName || this._faceIndex != this._actor._faceIndex)){
+		this.redrawFace();
+	}
+	if (this._isDynamic){
+		this.redrawDynamicFace();
+	}
+}
+
+Sprite_HUDFace.prototype.refresh = function(){}
+
+Sprite_HUDFace.prototype.redrawFace = function(){
+	this._faceName = this._actor._faceName;
+	this._faceIndex = this._actor._faceIndex;
+	this.bitmap = ImageManager.loadFace(this._faceName);
+	this.setFrame(this._faceIndex % 4 * 144, Math.floor(this._faceIndex / 4) * 144, 144, 144);
+}
+
+Sprite_HUDFace.prototype.redrawDynamicFace = function(){
+	this._faceName = this._actor.actor().meta['DamageFace'].match(/ *'(.*)'/)[1];
+	this._faceIndex = 4 - Math.ceil(this._actor.hpRate() / 0.25)
+	this.bitmap = ImageManager.loadBitmap('img/ActorDamageFaces/', this._faceName, 0, true);
+	this.setFrame(this._faceIndex % 5 * 144, 0, 144, 144);
 }
 
 function Sprite_HUDName(){
@@ -1459,10 +1520,22 @@ Sprite_HUDName.prototype.initialize = function(id, base){
 	this.bitmap = new Bitmap(98, 29)
 	this._id = id;
 	this._name = $gameParty.battleMembers()[id]._name;
-	this.x = base.x + 0
-	this.y = base.y + 96
+	this.x = 0
+	this.y = 96
 	this.bitmap.drawText(this._name, 0, 0, this.bitmap.width, this.bitmap.height, 'center');
 }
+
+Sprite_HUDName.prototype.update = function(){
+	if ($gameParty.battleMembers()[this._id] && this._name != $gameParty.battleMembers()[this._id]._name){
+		this._name = $gameParty.battleMembers()[this._id]._name;
+		this.refresh();
+	}
+} 
+
+Sprite_HUDName.prototype.refresh = function(){
+	this.bitmap.clear();
+	this.bitmap.drawText(this._name, 0, 0, this.bitmap.width, this.bitmap.height, 'center');
+} 
 
 function Sprite_ATBStateIcon(){
 	this.initialize.apply(this, arguments);
@@ -1503,15 +1576,8 @@ Sprite_ActorStateIcon.prototype.initialize = function(id, base, prior){
 	this._id = id;
 	Sprite_ATBStateIcon.prototype.initialize.call(this, prior);
 	this._base = base;
-	this.x = base.x + 98 + 31 * prior;
-	this.y = base.y + 93
-	// this._id = id;
-	// this._base = base;
-	// this._prior = prior;
-	// this.x = base.x + 98 + 31 * prior;
-	// this.y = base.y + 93
-	// this.bitmap = ImageManager.loadSystem('IconSet');
-	// this.refresh();
+	this.x = 98 + 31 * prior;
+	this.y = 93
 }
 
 Sprite_ActorStateIcon.prototype.refresh = function(){
@@ -1856,11 +1922,12 @@ Scene_Battle.prototype.endCommandSelection = function() {
 BattleManager.setStatusWindow = function(statusWindow) {};
 
 BattleManager.refreshStatus = function() {
-	this.refreshHpBars();
-	this.refreshMpBars();
-	this.refreshTpBars();
-	this.refreshIcons();
-	this.refreshTextOnBars();
+	// this.refreshHpBars();
+	// this.refreshMpBars();
+	// this.refreshTpBars();
+	// this.refreshIcons();
+	// this.refreshTextOnBars();
+	this._spriteset._hpBases.forEach(hud => hud.refresh());
 };
 
 Scene_Battle.prototype.stop = function() {
@@ -1911,7 +1978,7 @@ Scene_Battle.prototype.createDisplayObjects = function() {
 
 BattleManager.updateTurn = function() {
 	$gameParty.requestMotionRefresh();
-    if (!this._subject) {
+    if (!this._subject || this._subject.index() == -1) { //this._subject.index() == -1 - на випадок, якщо покине партію
         this._subject = this.getNextSubject();
     }
     if (this._subject) {
