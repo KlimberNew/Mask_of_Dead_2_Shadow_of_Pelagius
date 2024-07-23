@@ -418,6 +418,7 @@ Game_Actor.prototype.onRestrict = function() {
 
 Game_Enemy.prototype.revive = function() {
     Game_BattlerBase.prototype.revive.apply(this);
+	console.log('revive')
 	BattleManager._spriteset._atbEnemies[this._atbEnemyId].opacity = 255;
 	//BattleManager._spriteset._battleField.addChild(BattleManager._spriteset._atbEnemies[this._atbEnemyId]);
 	this.showHUD();
@@ -444,6 +445,7 @@ Game_Actor.prototype.hide = function() {
 Game_Enemy.prototype.appear = function() {
     Game_BattlerBase.prototype.appear.apply(this);
 	BattleManager._spriteset._battleField.addChild(BattleManager._spriteset._atbEnemies[this._atbEnemyId]);
+	BattleManager._spriteset._atbEnemies[this._atbEnemyId].opacity = 255;
 	this.showHUD();
 };
 
@@ -1465,7 +1467,7 @@ Sprite_HUDFace.prototype.initialize = function(actor, id, base){
 	this.base = base;
 	this._actor = actor;
 	this._id = id;
-	console.log(this._id)
+	//console.log(this._id)
 	this._isDynamic = this._actor.actor().meta['DamageFace'];
 	if (this._isDynamic){
 		this.redrawDynamicFace();
@@ -2118,7 +2120,6 @@ Sprite_Animation.prototype.setupRate = function(rate) {
 	} else {
     	this._rate = 4;
 	}
-	console.log(this._rate)
 };
 
 function Sprite_ChargeAnimation() {
