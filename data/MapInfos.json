@@ -217,6 +217,6 @@ null,
 {"id":215,"expanded":true,"name":"{_+ Пепельные просторы}","order":203,"parentId":176,"scrollX":619,"scrollY":348.5,"quick":false},
 {"id":216,"expanded":true,"name":"{_+ Пепельные просторы_центр}","order":204,"parentId":215,"scrollX":928.5,"scrollY":522.75,"quick":false},
 {"id":217,"expanded":true,"name":"{_+ Окраина пустыни}","order":206,"parentId":216,"scrollX":940.5,"scrollY":522.75,"quick":false},
-{"id":218,"expanded":false,"name":"{_+ Переход к краю}","order":207,"parentId":215,"scrollX":928.5,"scrollY":522.75,"quick":false},
+{"id":218,"expanded":true,"name":"{_+ Переход к краю}","order":207,"parentId":215,"scrollX":928.5,"scrollY":522.75,"quick":false},
 {"id":219,"expanded":true,"name":"{(Подзагрузка 8-й главы)}","order":219,"parentId":207,"scrollX":675.2727272727273,"scrollY":579.8181818181819,"quick":false}
 ]
