@@ -420,6 +420,10 @@ Game_Enemy.prototype.revive = function() {
     Game_BattlerBase.prototype.revive.apply(this);
 	console.log('revive')
 	BattleManager._spriteset._atbEnemies[this._atbEnemyId].opacity = 255;
+	if (Imported.MOG_CollapseEffects){
+		let sprite = BattleManager._spriteset._enemySprites.find(e => e._battler._atbEnemyId == this._atbEnemyId)
+		sprite.removeCollapseEffects(); //щоб не було дивного після трансформації і отримання шкоди після неї
+	}
 	//BattleManager._spriteset._battleField.addChild(BattleManager._spriteset._atbEnemies[this._atbEnemyId]);
 	this.showHUD();
 };
@@ -477,7 +481,7 @@ Game_Enemy.prototype.transform = function(enemyId) {
 	}
 	BattleManager._spriteset._atbEnemies[this._atbEnemyId].changePicture(filename);
 	ATB.Game_Enemy_prototype_transform.call(this, enemyId);
-	BattleManager._spriteset._hudEnemiesNames[this._atbEnemyId].refresh();
+	//BattleManager._spriteset._hudEnemiesNames[this._atbEnemyId].refresh();
 
 };
 
@@ -489,6 +493,15 @@ Game_Enemy.prototype.performDamage = function() {
     	$gameScreen.startShake(ATB.Param.ShakePower, ATB.Param.ShakeSpeed, ATB.Param.ShakeDuration);
 	}
 };
+
+ATB.Game_Troop_prototype_makeUniqueNames = Game_Troop.prototype.makeUniqueNames;
+Game_Troop.prototype.makeUniqueNames = function() {
+	ATB.Game_Troop_prototype_makeUniqueNames.call(this);
+	if (BattleManager._spriteset){
+		BattleManager._spriteset._hudEnemiesNames.forEach(enemyName => enemyName.refresh())
+	}
+};
+
 
 ATB.Sprite_Enemy_prototype_initMembers = Sprite_Enemy.prototype.initMembers
 Sprite_Enemy.prototype.initMembers = function() {
