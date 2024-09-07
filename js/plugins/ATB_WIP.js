@@ -422,7 +422,9 @@ Game_Enemy.prototype.revive = function() {
 	BattleManager._spriteset._atbEnemies[this._atbEnemyId].opacity = 255;
 	if (Imported.MOG_CollapseEffects){
 		let sprite = BattleManager._spriteset._enemySprites.find(e => e._battler._atbEnemyId == this._atbEnemyId)
-		sprite.removeCollapseEffects(); //щоб не було дивного після трансформації і отримання шкоди після неї
+		if (sprite._collData){
+			sprite.removeCollapseEffects(); //щоб не було дивного після трансформації і отримання шкоди після неї
+		}
 	}
 	//BattleManager._spriteset._battleField.addChild(BattleManager._spriteset._atbEnemies[this._atbEnemyId]);
 	this.showHUD();
