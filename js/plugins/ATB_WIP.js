@@ -430,6 +430,16 @@ Game_Enemy.prototype.revive = function() {
 	this.showHUD();
 };
 
+ATB.Game_Enemy_recoverAll = Game_Enemy.prototype.recoverAll;
+Game_Enemy.prototype.recoverAll = function() {
+	ATB.Game_Enemy_recoverAll.apply(this);
+	if (BattleManager._spriteset){
+		BattleManager._spriteset._atbEnemies[this._atbEnemyId].opacity = 255;
+		this.showHUD();
+	}
+};
+
+
 Game_Enemy.prototype.hide = function() {
 	Game_BattlerBase.prototype.hide.apply(this);
 	spriteset = BattleManager._spriteset
