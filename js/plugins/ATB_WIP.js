@@ -577,7 +577,9 @@ Game_Actor.prototype.performCollapse = function() {
 
 Game_Actor.prototype.revive = function() {
     Game_BattlerBase.prototype.revive.apply(this);
-	BattleManager._spriteset._battleField.addChild(BattleManager._spriteset._atbActors[this._atbActorId]);
+	if (SceneManager._scene == Scene_Battle){
+		BattleManager._spriteset._battleField.addChild(BattleManager._spriteset._atbActors[this._atbActorId]);
+	}
 };
 
 ATB.Scene_Battle_terminate = Scene_Battle.prototype.terminate;
