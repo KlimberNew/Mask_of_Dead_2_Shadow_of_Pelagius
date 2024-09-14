@@ -1665,12 +1665,14 @@ Spriteset_Battle.prototype.createHUDEnemies = function(){
 	this._hudEnemiesAnim = []
 	this._hudEnemiesNames = []
 	this._enemyFaces = []
-	this._bossesCount = 0
+	this._bossCount = 0;
 	for (i = 0; i < $gameTroop._enemies.length; i++){
-		if ($gameTroop._enemies[i].enemy().meta.Boss){
-			this._bossesCount++;
+		if ($gameTroop.members()[i].enemy().meta.Boss){
+			this._bossCount++;
+			this._hudEnemies[i] = new Sprite_HUDEnemy(i, this._bossCount);
+		} else {
+			this._hudEnemies[i] = new Sprite_HUDEnemy(i);
 		}
-		this._hudEnemies[i] = new Sprite_HUDEnemy(i);
 		this._hudEnemies[i].opacity = $gameTroop._enemies[i].isAppeared() ? 255 : 0;
 		this._hudEnemies[i].setup(this);
 		
@@ -1685,7 +1687,7 @@ Spriteset_Battle.prototype.createHUDEnemies = function(){
 		this._battleField.addChild(this._hudEnemiesNames[i])
 		
 		if ($gameTroop._enemies[i].enemy().meta.Boss){
-			this._enemyFaces[i] = new Sprite_HUDEnemyFace($gameTroop._enemies[i]._enemyId);
+			this._enemyFaces[i] = new Sprite_HUDEnemyFace($gameTroop._enemies[i]._enemyId, this._hudEnemies[i]);
 			this._battleField.addChild(this._enemyFaces[i]);
 		}
 
@@ -1720,9 +1722,10 @@ function Sprite_HUDEnemy(){
 Sprite_HUDEnemy.prototype = Object.create(Sprite_Base.prototype);
 Sprite_HUDEnemy.prototype.constructor = Sprite_HUDEnemy;
 
-Sprite_HUDEnemy.prototype.initialize = function(id){
+Sprite_HUDEnemy.prototype.initialize = function(id, bossNum){
 	Sprite_Base.prototype.initialize.call(this);
 	this._id = id;
+	this._bossNum = bossNum || 0;
 	if (this.isBoss()){
 		var name = "WIP_HP_Boss_Bar"
 	} else {
@@ -1738,7 +1741,7 @@ Sprite_HUDEnemy.prototype.setup = function(spriteset){
 			this.x = $gameTroop.members()[this._id]._screenX;
 			this.y = Math.max(0, $gameTroop.members()[this._id]._screenY + 48);
 		} else {
-			this.y = (this._spriteset._bossesCount - 1) * this._bitmap.height;
+			this.y = (this._bossNum - 1) * 54;
 		}
 }
 
@@ -1776,7 +1779,7 @@ Sprite_HUDEnemyAnim.prototype.setup = function(spriteset){
 	} else {
 		this._leftPad = 0
 		this.x = this._base.x;
-		this.y = this._base.y
+		this.y = this._base.y;
 	}
 }
 
@@ -1840,29 +1843,32 @@ function Sprite_HUDEnemyFace(){
 Sprite_HUDEnemyFace.prototype = Object.create(Sprite_Base.prototype);
 Sprite_HUDEnemyFace.prototype.constructor = Sprite_HUDEnemyFace;
 
-Sprite_HUDEnemyFace.prototype.initialize = function(id){
+Sprite_HUDEnemyFace.prototype.initialize = function(id, base){
 	Sprite_Base.prototype.initialize.call(this);
 	this._id = id
+	this._base = base;
 	if (doPathExist("img/BFace/Boss" + this._id + ".png")){
 		filename = "Boss" + this._id;
 	} else{
 		filename = "BossN"
 	}
+	this.x = this._base.x
+	this.y = this._base.y
 	this.bitmap = ImageManager.loadBitmap("img/BFace/", filename, 0, true);
 	
 	this._maskSprite = new Sprite()
 	this._maskSprite.bitmap = ImageManager.loadSystem("Mask2")
 }
 
-Sprite_HUDEnemyFace.prototype.update = function(){
-	if (BattleManager._spriteset != undefined){
-		sprite = BattleManager._spriteset._hudEnemies[this._id]
-		if (sprite != undefined){
-			this.x = sprite.x
-			this.y = sprite.y
-		}
-	}
-}
+// Sprite_HUDEnemyFace.prototype.update = function(){
+// 	if (BattleManager._spriteset != undefined){
+// 		sprite = BattleManager._spriteset._hudEnemies[this._id]
+// 		if (sprite != undefined){
+// 			this.x = sprite.x
+// 			this.y = sprite.y
+// 		}
+// 	}
+// }
 ///Windows reposition
 
 Scene_Battle.prototype.updateStatusWindow = function() {};
