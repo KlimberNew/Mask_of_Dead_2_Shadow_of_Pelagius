@@ -84,6 +84,18 @@
  * @max 6
  * @default 5
  * 
+ * @param BURST POWER PERC
+ * @type number
+ * @min 0
+ * @max 100
+ * @desc відсоток на який підвищуються базові стати персонажа
+ * @default 25
+ * 
+ * @param RESET BURST AFTER BATTLE
+ * @type boolean
+ * @desc якщо true - після битви шкала скидається до 0 і її потрібно буде знову заповнювати, false – підсилення зберігається
+ * @default false
+ * 
  * @help
  * Після YEP_CoreEngine
  * Після MOG_CollapseEffects
@@ -129,6 +141,9 @@ ATB.Param.ShakeDuration = Number(ATB.Parameters['shake_duration']) || 10;
 
 ATB.Param.SpeedUpAnimation = eval(ATB.Parameters['speed_up_animation']);
 ATB.Param.SpeedUpValueDefault = Number(ATB.Parameters['speed_up_value_default']) || 5;
+
+ATB.Param.BurstPowerPerc = Number(ATB.Parameters['BURST POWER PERC']) || 25;
+ATB.Param.ResetBurstAfterBattle = eval(ATB.Parameters['RESET BURST AFTER BATTLE'])
 
  
 function doPathExist(path_to_file){
@@ -765,15 +780,20 @@ BattleManager.update = function() {
 			if (!this._battlersTurns[i][3]){
 				this._battlersTurns[i][1] = this._battlersTurns[i][1] - this._battlersTurns[i][0].agi / ATB.Param.Divider;
 			} else {
-				this._battlersTurns[i][1] = this._battlersTurns[i][1] - ATB.Param.Base / this._battlersTurns[i][0].currentAction().item().speed / ATB.Param.Divider;
-				if (!(i < $gameParty.battleMembers().length && this.isActorAnimationPlaying(i)) && !(i >= $gameParty.battleMembers().length && this.isEnemyAnimationPlaying(i - $gameParty.battleMembers().length)) && !this._spriteset.isBusy()){
-					this._battlersTurns[i][0].clearAnimations();
-					if (this._battlersTurns[i][0].currentAction().item().meta["Charge Animation"]){
-						let animationId = this._battlersTurns[i][0].currentAction().item().meta["Charge Animation"].replace(/ /g, '');
-						this._battlersTurns[i][0].startChargeAnimation(animationId, false, 0);
-					} else {
-						this._battlersTurns[i][0].startChargeAnimation(ATB.Param.ChargeAnimation, false, 0);
+				if (this._battlersTurns[i][0].currentAction().item()){
+					this._battlersTurns[i][1] = this._battlersTurns[i][1] - ATB.Param.Base / this._battlersTurns[i][0].currentAction().item().speed / ATB.Param.Divider;
+					if (!(i < $gameParty.battleMembers().length && this.isActorAnimationPlaying(i)) && !(i >= $gameParty.battleMembers().length && this.isEnemyAnimationPlaying(i - $gameParty.battleMembers().length)) && !this._spriteset.isBusy()){
+						this._battlersTurns[i][0].clearAnimations();
+						if (this._battlersTurns[i][0].currentAction().item().meta["Charge Animation"]){
+							let animationId = this._battlersTurns[i][0].currentAction().item().meta["Charge Animation"].replace(/ /g, '');
+							this._battlersTurns[i][0].startChargeAnimation(animationId, false, 0);
+						} else {
+							this._battlersTurns[i][0].startChargeAnimation(ATB.Param.ChargeAnimation, false, 0);
+						}
 					}
+				} else {
+					this._battlersTurns[i][3] = false;
+					this._battlersTurns[i][1] = this._battlersTurns[i][1] - this._battlersTurns[i][0].agi / ATB.Param.Divider;
 				}
 			}
 			if (this._battlersTurns[i][1] <= 0){
@@ -1065,7 +1085,9 @@ Spriteset_Battle.prototype.createLowerLayer = function() {
 	}
 	this.createATBEnemies();
 	this.createATBMagic();
+	this.createBurstGauge();
 };
+
 Spriteset_Battle.prototype.createATBBar = function(){
     this._atbBase = new Sprite_ATBBarBase("WIP_Line");
     this._battleField.addChild(this._atbBase);
@@ -2168,3 +2190,113 @@ Sprite_ChargeAnimation.prototype.updateFrame = function() {
 		this.setupDuration();
     }
 };
+
+//=====Burst Gauge=====//
+
+ATB.Game_Party_init = Game_Party.prototype.initialize;
+Game_Party.prototype.initialize = function() {
+    ATB.Game_Party_init.call(this);
+    this._burstGauge = 0;
+    this._isBurstBuff = false;
+};
+
+Game_Party.prototype.burstGauge = function(){
+    if (this._burstGauge == undefined){
+        this._burstGauge = 0;
+    }
+    return this._burstGauge;
+}
+
+Game_Party.prototype.burstUp = function(value){
+    if (this._burstGauge + value < 100){
+        this._burstGauge += value;
+    } else if (this._burstGauge < 100){
+        this._burstGauge = 100;
+        this._isBurstBuff = true;
+    }
+}
+
+ATB.Game_Actor_paramRate = Game_Actor.prototype.paramRate;
+Game_Actor.prototype.paramRate = function(paramId) {
+    return ATB.Game_Actor_paramRate.call(this, paramId) * (1 + (($gameParty._isBurstBuff || false) && paramId >= 2) * ATB.Param.BurstPowerPerc / 100);
+};
+
+Game_Party.prototype.burstDown = function(value){
+    this._burstGauge -= value;
+    if (this._burstGauge <= 0){
+        this._burstGauge = 0;
+        this._isBurstBuff = false;
+    }
+}
+
+Game_Party.prototype.resetBurst = function(){
+    this._burstGauge = 0;
+    this._isBurstBuff = false;
+}
+
+ATB.Game_Action_apply = Game_Action.prototype.apply;
+Game_Action.prototype.apply = function(target) {
+    ATB.Game_Action_apply.call(this, target);
+    var result = target.result();
+    if (this.subject().isActor() && target.isEnemy() && result.isHit()) {
+        if ($gameParty._isBurstBuff){
+            $gameParty.burstDown(5);
+            BattleManager.refreshBurstGauge();
+        } else {
+            var burstUp = Number(this.item().meta["Burst_Up"]) || 5
+            $gameParty.burstUp(burstUp);
+            BattleManager.refreshBurstGauge();
+        }
+    }
+};
+
+ATB.Game_Actor_onDamage = Game_Actor.prototype.onDamage
+Game_Actor.prototype.onDamage = function(value) {
+    ATB.Game_Actor_onDamage.call(this, value);
+    $gameParty.burstDown(5);
+    BattleManager.refreshBurstGauge();
+};
+
+ATB.BattleManager_updateBattleEnd = BattleManager.updateBattleEnd;
+BattleManager.updateBattleEnd = function() {
+    ATB.BattleManager_updateBattleEnd.call(this);
+    if (ATB.Param.ResetBurstAfterBattle){
+        $gameParty.resetBurst();
+    }
+};
+
+//=====Visuals=====//
+BattleManager.refreshBurstGauge = function(){
+    this._spriteset._burstGauge.refresh();
+}
+
+Spriteset_Battle.prototype.createBurstGauge = function(){
+    this._burstGauge = new Sprite_BurstGauge();
+    this._battleField.addChild(this._burstGauge);
+}
+
+function Sprite_BurstGauge(){
+	this.initialize.apply(this, arguments)
+}
+
+Sprite_BurstGauge.prototype = Object.create(Sprite_Base.prototype);
+Sprite_BurstGauge.prototype.constructor = Sprite_BurstGauge;
+
+Sprite_BurstGauge.prototype.initialize = function(){
+	Sprite_Base.prototype.initialize.call(this);
+	this.bitmap = new Bitmap(532,24);
+	this.x = 400;
+    this.y = 12;
+    this.refresh();
+}
+Sprite_BurstGauge.prototype.refresh = function(){
+	var pw = Math.floor((this._bitmap.width - 32) * (($gameParty.burstGauge() || 0) / 100))
+    this.bitmap.drawText('EX', 0, 0, 30, 24);
+    this.bitmap.fillRect(30, 0, this._bitmap.width - 30, 24, textcolor(28));
+    this.bitmap.fillRect(31, 1, this._bitmap.width - 32, 22, textcolor(15));
+    if ($gameParty._isBurstBuff){
+        this.bitmap.gradientFillRect(31, 1, pw, 22, textcolor(6), textcolor(14));
+    } else {
+        this.bitmap.gradientFillRect(31, 1, pw, 22, textcolor(3), textcolor(11));
+    }
+}
