@@ -2004,14 +2004,36 @@ Scene_Battle.prototype.createActorCommandWindow = function() {
     this._actorCommandWindow.setHandler('attack', this.commandAttack.bind(this));
     this._actorCommandWindow.setHandler('skill',  this.commandSkill.bind(this));
     this._actorCommandWindow.setHandler('guard',  this.commandGuard.bind(this));
+    this._actorCommandWindow.setHandler('counter',  this.commandCounter.bind(this));
     this._actorCommandWindow.setHandler('item',   this.commandItem.bind(this));
     this._actorCommandWindow.setHandler('cancel', this.startPartyCommandSelection.bind(this));
     this.addWindow(this._actorCommandWindow);
 };
 
+Window_ActorCommand.prototype.makeCommandList = function() {
+    if (this._actor) {
+        this.addAttackCommand();
+        this.addGuardCommand();
+		this.addCounterCommand();
+        this.addSkillCommands();
+        this.addItemCommand();
+    }
+};
+
+Window_ActorCommand.prototype.addCounterCommand = function() {
+    this.addCommand($dataSkills[8].name, 'counter', this._actor.canUse($dataSkills[8]));
+};
+
+
 Scene_Battle.prototype.commandFight = function() {
     this.startActorCommandSelection();
 };
+
+Scene_Battle.prototype.commandCounter = function() {
+	BattleManager.inputtingAction().setSkill(8);
+	this.selectNextCommand();
+};
+
 
 BattleManager.selectPreviousCommand = function() {
 	do {
