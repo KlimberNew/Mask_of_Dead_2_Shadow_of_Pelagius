@@ -324,5 +324,15 @@ null,
 {"id":322,"list":[{"code":301,"indent":0,"parameters":[0,111,false,false]},{"code":117,"indent":0,"parameters":[316]},{"code":0,"indent":0,"parameters":[]}],"name":"СредняяСтаяГлава4","switchId":1,"trigger":0},
 {"id":323,"list":[{"code":301,"indent":0,"parameters":[0,112,false,false]},{"code":117,"indent":0,"parameters":[316]},{"code":0,"indent":0,"parameters":[]}],"name":"СредняяСтаяГлава5","switchId":1,"trigger":0},
 {"id":324,"list":[{"code":301,"indent":0,"parameters":[0,113,false,false]},{"code":117,"indent":0,"parameters":[316]},{"code":0,"indent":0,"parameters":[]}],"name":"БольшаяСтаяГлава5","switchId":1,"trigger":0},
-{"id":325,"list":[{"code":0,"indent":0,"parameters":[]}],"name":"","switchId":1,"trigger":0}
+{"id":325,"list":[{"code":301,"indent":0,"parameters":[0,114,false,false]},{"code":117,"indent":0,"parameters":[316]},{"code":0,"indent":0,"parameters":[]}],"name":"ПризрачныйОтрядГлава7","switchId":1,"trigger":0},
+{"id":326,"list":[{"code":301,"indent":0,"parameters":[0,115,false,false]},{"code":117,"indent":0,"parameters":[316]},{"code":0,"indent":0,"parameters":[]}],"name":"БатальонВосставшихГлава9","switchId":1,"trigger":0},
+{"id":327,"list":[{"code":301,"indent":0,"parameters":[0,116,false,false]},{"code":117,"indent":0,"parameters":[316]},{"code":0,"indent":0,"parameters":[]}],"name":"БатальонВосставшихСПатриархомГлава9","switchId":1,"trigger":0},
+{"id":328,"list":[{"code":0,"indent":0,"parameters":[]}],"name":"","switchId":1,"trigger":0},
+{"id":329,"list":[{"code":0,"indent":0,"parameters":[]}],"name":"","switchId":1,"trigger":0},
+{"id":330,"list":[{"code":0,"indent":0,"parameters":[]}],"name":"","switchId":1,"trigger":0},
+{"id":331,"list":[{"code":0,"indent":0,"parameters":[]}],"name":"","switchId":1,"trigger":0},
+{"id":332,"list":[{"code":0,"indent":0,"parameters":[]}],"name":"","switchId":1,"trigger":0},
+{"id":333,"list":[{"code":0,"indent":0,"parameters":[]}],"name":"","switchId":1,"trigger":0},
+{"id":334,"list":[{"code":0,"indent":0,"parameters":[]}],"name":"","switchId":1,"trigger":0},
+{"id":335,"list":[{"code":0,"indent":0,"parameters":[]}],"name":"","switchId":1,"trigger":0}
 ]
