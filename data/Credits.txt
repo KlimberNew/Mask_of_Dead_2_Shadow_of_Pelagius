@@ -56,6 +56,46 @@ RTPN - Decay
 RTPN - Degenerate
 RTPN - Pitch-black
 RTPN - Boomslang
+RTPN - Alarm
+RTPN - Attack
+RTPN - Awake
+RTPN - demo1(Battle Theme1)
+RTPN - decay demo(Boss Battle Theme1)
+RTPN - Beer rally
+RTPN - ClownIsWe
+RTPN - D_A_C
+RTPN - Death Whisper
+RTPN - Down Shift
+RTPN - Gem
+RTPN - Hippi
+RTPN - Horksevis
+RTPN - Mask
+RTPN - Moneypulate
+RTPN - O.U.T. 06
+RTPN - Output
+RTPN - Perkele II
+RTPN - Riddler
+RTPN - Prevail
+RTPN - Quarantine
+RTPN - DM
+RTPN - Mute
+RTPN - Ghosts
+RTPN - Pulse
+RTPN - Unnamed
+RTPN - Venom
+RTPN - Hypersleep
+RTPN - Oblivion
+RTPN - Scanner
+RTPN - SiN
+RTPN - Sustain
+RTPN - The Fall
+RTPN - Total War(RIOT AR)
+RTPN - Uprizing
+RTPN - Uprizing II
+RTPN - Viking
+RTPN - Weakend
+RTPN - WhoKnows
+
 https://www.youtube.com/@RTPNOfficial/videos
 Feel free to use this song as a soundtrack for your 
 next youtube video, game or just background music for training 
@@ -75,6 +115,7 @@ CGMV Encyclopedia.js
 CGMV MenuCommandWindow.js
 TitleCommandPosition.js
 FELSKI_AUTOSAVE.js
+YEP_DamageCore.js
 YEP_CoreEngine.js
 YEP_EquipCore.js
 YEP_ItemCore.js
@@ -85,8 +126,10 @@ YEP_MessageCore.js
 YEP_QuestJournal.js
 YEP_SaveEventLocations.js
 YEP_MoveRouteCore.js
+YEP_X_ItemSyntesis.js
 YEP_X_ItemUpgradeSlots.js
 YEP_X_EquipCustomize.js
+YEP_X_SkillCooldowns.js
 SelfSwitcher_Pavel Sotnikov.js
 ScreenVariables_Dirge.js
 SRD_FullscreenToggleOption.js
@@ -94,6 +137,7 @@ TerraxLighting.js
 MOG_ActorHud.js
 MOG_AnimatedText.js
 MOG_TreasurePopup.js
+MOG_CollapseEffects.js
 GALV_EventSpawner.js
 GALV_LayerGraphics.js
 GALV_RollCredits.js
@@ -104,6 +148,7 @@ OcRam_Core_Marko Paakkunainen.js
 Event After Load_mrcopra.js
 DKTools.js
 DKTools_Localization.js
+Event After Load.js by mrcopra
 
 \c[2]{Special thanks}
 GreenLeo(GreenVegeta)
